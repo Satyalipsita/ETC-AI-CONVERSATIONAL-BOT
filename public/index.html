@@ -6,1584 +6,706 @@
 <title>DRIEMS Polytechnic — ETC Admission Counsellor</title>
 <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Noto+Serif+Odia:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg-deep: #030a12;
-    --bg-panel: #070f1c;
-    --bg-card: #0b1929;
-    --accent-primary: #00d4ff;
-    --accent-secondary: #0066cc;
-    --accent-green: #00ff99;
-    --accent-amber: #ffaa00;
-    --text-bright: #e8f4ff;
-    --text-muted: #5a8aaa;
-    --border-glow: rgba(0,212,255,0.3);
-    --border-soft: rgba(0,212,255,0.12);
-    --red: #ff3b5c;
-    --font-main: 'Exo 2', sans-serif;
-    --font-mono: 'Share Tech Mono', monospace;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    font-family: var(--font-main);
-    background: var(--bg-deep);
-    color: var(--text-bright);
-    min-height: 100vh;
-    overflow: hidden;
-    position: relative;
-  }
-
-  /* Circuit Background */
-  .circuit-bg {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .circuit-bg svg {
-    width: 100%;
-    height: 100%;
-    opacity: 0.06;
-  }
-
-  /* Scan Line */
-  .scanline {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
-    animation: scanDown 4s linear infinite;
-    pointer-events: none;
-    z-index: 1;
-    opacity: 0.3;
-  }
-
-  @keyframes scanDown {
-    0% { top: 0; }
-    100% { top: 100vh; }
-  }
-
-  /* Main Layout */
-  .app-wrapper {
-    position: relative;
-    z-index: 2;
-    display: grid;
-    grid-template-columns: 320px 1fr;
-    height: 100vh;
-    gap: 0;
-  }
-
-  /* ─── LEFT PANEL ─── */
-  .left-panel {
-    background: var(--bg-panel);
-    border-right: 1px solid var(--border-soft);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .brand-header {
-    padding: 20px 20px 16px;
-    border-bottom: 1px solid var(--border-soft);
-  }
-
-  .brand-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 6px;
-  }
-
-  .logo-icon {
-    width: 38px;
-    height: 38px;
-    background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: -1px;
-  }
-
-  .brand-text h1 {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--accent-primary);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-
-  .brand-text p {
-    font-size: 10px;
-    color: var(--text-muted);
-    letter-spacing: 0.08em;
-  }
-
-  .dept-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(0,212,255,0.08);
-    border: 1px solid var(--border-glow);
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--accent-primary);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
-  .dept-badge span { color: var(--accent-green); font-size: 8px; }
-
-  /* Quick Info */
-  .info-section {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border-soft);
-  }
-
-  .info-title {
-    font-size: 9px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 10px;
-  }
-
-  .info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-
-  .info-card {
-    background: rgba(0,212,255,0.04);
-    border: 1px solid var(--border-soft);
-    border-radius: 8px;
-    padding: 10px;
-    text-align: center;
-  }
-
-  .info-card .val {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--accent-primary);
-    font-family: var(--font-mono);
-    display: block;
-    line-height: 1;
-    margin-bottom: 2px;
-  }
-
-  .info-card .lbl {
-    font-size: 9px;
-    color: var(--text-muted);
-    letter-spacing: 0.05em;
-  }
-
-  /* Key Highlights */
-  .highlights {
-    padding: 16px 20px;
-    flex: 1;
-    overflow-y: auto;
-    border-bottom: 1px solid var(--border-soft);
-  }
-
-  .highlight-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 12px;
-    padding: 10px;
-    background: rgba(0,255,153,0.03);
-    border: 1px solid rgba(0,255,153,0.1);
-    border-radius: 8px;
-  }
-
-  .hi-icon {
-    width: 26px;
-    height: 26px;
-    border-radius: 6px;
-    background: rgba(0,255,153,0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    flex-shrink: 0;
-  }
-
-  .hi-text strong {
-    display: block;
-    font-size: 11px;
-    font-weight: 600;
-    color: #cceeff;
-    margin-bottom: 2px;
-  }
-
-  .hi-text span {
-    font-size: 10px;
-    color: var(--text-muted);
-    line-height: 1.4;
-  }
-
-  .contact-footer {
-    padding: 14px 20px;
-    font-size: 10px;
-    color: var(--text-muted);
-    line-height: 1.7;
-  }
-
-  .contact-footer a {
-    color: var(--accent-primary);
-    text-decoration: none;
-  }
-
-  /* ─── RIGHT PANEL ─── */
-  .right-panel {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-  }
-
-  /* Top Bar */
-  .top-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 28px;
-    border-bottom: 1px solid var(--border-soft);
-    background: rgba(7,15,28,0.8);
-    backdrop-filter: blur(10px);
-  }
-
-  .caller-info {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .avatar {
-    position: relative;
-    width: 46px;
-    height: 46px;
-  }
-
-  .avatar-ring {
-    position: absolute;
-    inset: -4px;
-    border-radius: 50%;
-    border: 2px solid var(--accent-primary);
-    opacity: 0;
-  }
-
-  .avatar-ring.pulse {
-    animation: ringPulse 1.5s ease-out infinite;
-  }
-
-  @keyframes ringPulse {
-    0% { transform: scale(0.95); opacity: 0.8; }
-    100% { transform: scale(1.3); opacity: 0; }
-  }
-
-  .avatar-circle {
-    width: 46px;
-    height: 46px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #0a2a50, #0d4080);
-    border: 2px solid var(--accent-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--accent-primary);
-    font-family: var(--font-mono);
-    position: relative;
-  }
-
-  .caller-meta h2 {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-bright);
-  }
-
-  .caller-meta p {
-    font-size: 11px;
-    color: var(--text-muted);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .status-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #444;
-    transition: background 0.3s;
-  }
-
-  .status-dot.active { background: var(--accent-green); animation: dotBlink 1.2s ease-in-out infinite; }
-  .status-dot.speaking { background: var(--accent-primary); }
-  .status-dot.listening { background: var(--accent-amber); }
-
-  @keyframes dotBlink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
-
-  .call-timer {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    color: var(--accent-green);
-    letter-spacing: 0.1em;
-  }
-
-  /* Transcript Area */
-  .transcript-area {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px 28px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    scroll-behavior: smooth;
-  }
-
-  .transcript-area::-webkit-scrollbar { width: 4px; }
-  .transcript-area::-webkit-scrollbar-track { background: transparent; }
-  .transcript-area::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 4px; }
-
-  .msg-row {
-    display: flex;
-    gap: 12px;
-    max-width: 78%;
-    animation: msgFadeIn 0.35s ease-out both;
-  }
-
-  @keyframes msgFadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .msg-row.bot { align-self: flex-start; }
-  .msg-row.user { align-self: flex-end; flex-direction: row-reverse; }
-
-  .msg-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 700;
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-
-  .msg-row.bot .msg-avatar {
-    background: rgba(0,102,204,0.3);
-    border: 1px solid var(--accent-secondary);
-    color: var(--accent-primary);
-  }
-
-  .msg-row.user .msg-avatar {
-    background: rgba(0,255,153,0.1);
-    border: 1px solid rgba(0,255,153,0.3);
-    color: var(--accent-green);
-  }
-
-  .msg-bubble {
-    padding: 12px 16px;
-    border-radius: 14px;
-    font-size: 13.5px;
-    line-height: 1.65;
-    max-width: 100%;
-  }
-
-  .msg-row.bot .msg-bubble {
-    background: var(--bg-card);
-    border: 1px solid var(--border-soft);
-    border-top-left-radius: 4px;
-    color: var(--text-bright);
-  }
-
-  .msg-row.user .msg-bubble {
-    background: rgba(0,102,204,0.2);
-    border: 1px solid rgba(0,150,255,0.25);
-    border-top-right-radius: 4px;
-    color: #cce8ff;
-    text-align: right;
-  }
-
-  .msg-time {
-    font-size: 9px;
-    color: var(--text-muted);
-    margin-top: 4px;
-    font-family: var(--font-mono);
-  }
-
-  /* Typing indicator */
-  .typing-indicator {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 12px 16px;
-  }
-
-  .typing-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--text-muted);
-    animation: typingBounce 1.2s ease-in-out infinite;
-  }
-
-  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-  @keyframes typingBounce {
-    0%, 60%, 100% { transform: translateY(0); }
-    30% { transform: translateY(-5px); }
-  }
-
-  /* Waveform */
-  .waveform-section {
-    padding: 12px 28px;
-    border-top: 1px solid var(--border-soft);
-    border-bottom: 1px solid var(--border-soft);
-    background: rgba(7,15,28,0.6);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    min-height: 56px;
-  }
-
-  .waveform-label {
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    min-width: 70px;
-  }
-
-  .waveform {
-    flex: 1;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    gap: 2px;
-  }
-
-  .waveform-bar {
-    flex: 1;
-    border-radius: 2px;
-    transition: height 0.05s ease;
-    background: var(--accent-primary);
-    opacity: 0.5;
-    height: 4px;
-  }
-
-  .waveform-bar.active {
-    opacity: 1;
-    animation: waveAnim var(--dur, 0.6s) ease-in-out infinite alternate;
-  }
-
-  @keyframes waveAnim {
-    from { height: 4px; }
-    to { height: var(--h, 28px); }
-  }
-
-  /* Control Zone */
-  .control-zone {
-    padding: 18px 28px 22px;
-    background: rgba(7,15,28,0.95);
-    border-top: 1px solid var(--border-soft);
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  /* Text Input Row */
-  .input-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-
-  .text-input {
-    flex: 1;
-    background: var(--bg-card);
-    border: 1px solid var(--border-soft);
-    border-radius: 30px;
-    padding: 11px 20px;
-    color: var(--text-bright);
-    font-family: var(--font-main);
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .text-input:focus {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 2px rgba(0,212,255,0.1);
-  }
-
-  .text-input::placeholder { color: var(--text-muted); }
-
-  .send-btn {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    background: var(--accent-secondary);
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.15s, background 0.2s;
-    color: white;
-  }
-
-  .send-btn:hover { background: var(--accent-primary); transform: scale(1.05); }
-  .send-btn:active { transform: scale(0.96); }
-
-  /* Call Controls */
-  .call-controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-  }
-
-  .ctrl-btn {
-    width: 46px;
-    height: 46px;
-    border-radius: 50%;
-    border: 1px solid var(--border-glow);
-    background: rgba(0,212,255,0.06);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    transition: all 0.18s;
-    color: var(--text-bright);
-  }
-
-  .ctrl-btn:hover { background: rgba(0,212,255,0.15); transform: scale(1.08); }
-
-  .ctrl-btn.active {
-    background: rgba(0,212,255,0.2);
-    border-color: var(--accent-primary);
-    color: var(--accent-primary);
-  }
-
-  .ctrl-btn.muted {
-    background: rgba(255,59,92,0.1);
-    border-color: rgba(255,59,92,0.4);
-    color: var(--red);
-  }
-
-  /* MAIN CALL BUTTON */
-  .call-btn-wrap {
-    position: relative;
-  }
-
-  .call-btn-ring {
-    position: absolute;
-    inset: -8px;
-    border-radius: 50%;
-    border: 2px solid var(--accent-primary);
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .call-btn-ring.ripple {
-    animation: btnRipple 1.5s ease-out infinite;
-  }
-
-  @keyframes btnRipple {
-    0% { transform: scale(0.9); opacity: 0.7; }
-    100% { transform: scale(1.5); opacity: 0; }
-  }
-
-  .call-main-btn {
-    width: 58px;
-    height: 58px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    transition: transform 0.15s;
-    background: linear-gradient(135deg, #0a6e3f, #00c97a);
-    box-shadow: 0 4px 20px rgba(0,201,122,0.4);
-    color: white;
-  }
-
-  .call-main-btn:hover { transform: scale(1.06); }
-  .call-main-btn.active {
-    background: linear-gradient(135deg, #8a0020, var(--red));
-    box-shadow: 0 4px 20px rgba(255,59,92,0.4);
-  }
-
-  .mic-btn {
-    width: 58px;
-    height: 58px;
-    border-radius: 50%;
-    border: 2px solid var(--border-glow);
-    background: rgba(0,212,255,0.06);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    transition: all 0.18s;
-    color: var(--text-bright);
-  }
-
-  .mic-btn:hover { background: rgba(0,212,255,0.15); }
-  .mic-btn.recording {
-    border-color: var(--accent-amber);
-    background: rgba(255,170,0,0.12);
-    color: var(--accent-amber);
-    animation: micPulse 1s ease-in-out infinite alternate;
-  }
-
-  @keyframes micPulse {
-    from { box-shadow: 0 0 0 0 rgba(255,170,0,0.3); }
-    to { box-shadow: 0 0 0 12px rgba(255,170,0,0); }
-  }
-
-  /* Bottom hint bar */
-  .hint-bar {
-    text-align: center;
-    font-size: 10px;
-    color: var(--text-muted);
-    letter-spacing: 0.06em;
-  }
-
-  /* State screens */
-  .idle-screen {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 24px;
-    padding: 40px;
-  }
-
-  .idle-orb {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .orb-inner {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #0a2a50, #0d4080);
-    border: 2px solid var(--accent-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-    z-index: 2;
-  }
-
-  .orb-ring {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    border: 1px solid rgba(0,212,255,0.3);
-    animation: orbRing 2s ease-in-out infinite;
-  }
-
-  .orb-ring:nth-child(2) { animation-delay: 0.6s; }
-  .orb-ring:nth-child(3) { animation-delay: 1.2s; }
-
-  @keyframes orbRing {
-    0% { transform: scale(1); opacity: 0.6; }
-    100% { transform: scale(1.8); opacity: 0; }
-  }
-
-  .idle-text {
-    text-align: center;
-  }
-
-  .idle-text h2 {
-    font-size: 22px;
-    font-weight: 600;
-    color: var(--text-bright);
-    margin-bottom: 8px;
-  }
-
-  .idle-text p {
-    font-size: 13px;
-    color: var(--text-muted);
-    line-height: 1.6;
-    max-width: 360px;
-  }
-
-  .start-call-btn {
-    padding: 14px 40px;
-    border-radius: 40px;
-    background: linear-gradient(135deg, #0a6e3f, #00c97a);
-    border: none;
-    color: white;
-    font-family: var(--font-main);
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    letter-spacing: 0.04em;
-    transition: transform 0.18s, box-shadow 0.18s;
-    box-shadow: 0 6px 24px rgba(0,201,122,0.35);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .start-call-btn:hover { transform: scale(1.04); box-shadow: 0 8px 30px rgba(0,201,122,0.5); }
-
-  /* Responsive */
-  @media (max-width: 750px) {
-    .app-wrapper { grid-template-columns: 1fr; }
-    .left-panel { display: none; }
-  }
-
-  /* Language Toggle */
-  .lang-toggle {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    background: var(--bg-card);
-    border: 1px solid var(--border-glow);
-    border-radius: 20px;
-    overflow: hidden;
-  }
-
-  .lang-btn {
-    padding: 5px 14px;
-    font-family: var(--font-main);
-    font-size: 12px;
-    font-weight: 600;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.2s;
-    letter-spacing: 0.04em;
-  }
-
-  .lang-btn.active {
-    background: var(--accent-primary);
-    color: #000;
-    border-radius: 18px;
-  }
-
-  .lang-btn:hover:not(.active) { color: var(--text-bright); }
-
-  /* Odia script font support */
-  .odia-text {
-    font-family: 'Noto Sans Odia', 'Noto Serif Odia', Arial Unicode MS, sans-serif;
-  }
-
-  /* TTS warning toast */
-  .tts-toast {
-    position: fixed;
-    bottom: 80px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(255,170,0,0.15);
-    border: 1px solid rgba(255,170,0,0.4);
-    color: var(--accent-amber);
-    padding: 10px 20px;
-    border-radius: 20px;
-    font-size: 12px;
-    z-index: 100;
-    text-align: center;
-    max-width: 400px;
-    animation: toastIn 0.3s ease;
-  }
-
-  @keyframes toastIn {
-    from { opacity: 0; transform: translateX(-50%) translateY(10px); }
-    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-  }
-
-  /* Scrollbar */
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-soft) transparent;
-  }
+:root {
+  --bg-deep:#030a12;--bg-panel:#070f1c;--bg-card:#0b1929;
+  --ap:#00d4ff;--as:#0066cc;--ag:#00ff99;--aa:#ffaa00;
+  --tb:#e8f4ff;--tm:#5a8aaa;--bg:#rgba(0,212,255,0.3);
+  --bs:rgba(0,212,255,0.12);--red:#ff3b5c;
+  --fm:'Exo 2',sans-serif;--fmo:'Share Tech Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--fm);background:var(--bg-deep);color:var(--tb);min-height:100vh;overflow:hidden;}
+.cbg{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.cbg svg{width:100%;height:100%;opacity:0.06;}
+.scanline{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--ap),transparent);animation:scanDown 4s linear infinite;pointer-events:none;z-index:1;opacity:0.25;}
+@keyframes scanDown{0%{top:0}100%{top:100vh}}
+.app{position:relative;z-index:2;display:grid;grid-template-columns:300px 1fr;height:100vh;}
+
+/* LEFT PANEL */
+.lp{background:var(--bg-panel);border-right:1px solid var(--bs);display:flex;flex-direction:column;overflow:hidden;}
+.bh{padding:18px 18px 14px;border-bottom:1px solid var(--bs);}
+.bl{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.li{width:36px;height:36px;background:linear-gradient(135deg,var(--as),var(--ap));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;}
+.bt h1{font-size:12px;font-weight:600;color:var(--ap);letter-spacing:.05em;text-transform:uppercase;}
+.bt p{font-size:10px;color:var(--tm);}
+.db{display:inline-flex;align-items:center;gap:5px;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.3);border-radius:20px;padding:4px 12px;font-size:10px;font-weight:600;color:var(--ap);letter-spacing:.08em;text-transform:uppercase;}
+.db span{color:var(--ag);font-size:8px;}
+.is{padding:14px 18px;border-bottom:1px solid var(--bs);}
+.it{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--tm);margin-bottom:8px;}
+.ig{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.ic{background:rgba(0,212,255,.04);border:1px solid var(--bs);border-radius:8px;padding:8px;text-align:center;}
+.ic .v{font-size:18px;font-weight:700;color:var(--ap);font-family:var(--fmo);display:block;line-height:1;margin-bottom:2px;}
+.ic .l{font-size:9px;color:var(--tm);}
+.hl{padding:14px 18px;flex:1;overflow-y:auto;border-bottom:1px solid var(--bs);}
+.hi{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px;padding:8px;background:rgba(0,255,153,.03);border:1px solid rgba(0,255,153,.1);border-radius:8px;}
+.hii{width:24px;height:24px;border-radius:6px;background:rgba(0,255,153,.1);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+.hit strong{display:block;font-size:11px;font-weight:600;color:#cceeff;margin-bottom:2px;}
+.hit span{font-size:10px;color:var(--tm);line-height:1.4;}
+.cf{padding:12px 18px;font-size:10px;color:var(--tm);line-height:1.8;}
+.cf a{color:var(--ap);text-decoration:none;}
+
+/* RIGHT PANEL */
+.rp{display:flex;flex-direction:column;height:100vh;}
+.tb2{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--bs);background:rgba(7,15,28,.8);}
+.ci{display:flex;align-items:center;gap:12px;}
+.av{position:relative;width:44px;height:44px;}
+.avr{position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--ap);opacity:0;}
+.avr.pulse{animation:rp 1.5s ease-out infinite;}
+@keyframes rp{0%{transform:scale(.95);opacity:.8}100%{transform:scale(1.3);opacity:0}}
+.avc{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#0a2a50,#0d4080);border:2px solid var(--ap);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:var(--ap);font-family:var(--fmo);}
+.cm h2{font-size:14px;font-weight:600;color:var(--tb);}
+.cm p{font-size:11px;color:var(--tm);display:flex;align-items:center;gap:5px;}
+.sd{width:7px;height:7px;border-radius:50%;background:#333;transition:background .3s;}
+.sd.active{background:var(--ag);animation:db2 1.2s ease-in-out infinite;}
+.sd.speaking{background:var(--ap);}
+.sd.listening{background:var(--aa);}
+@keyframes db2{0%,100%{opacity:1}50%{opacity:.3}}
+.ct{font-family:var(--fmo);font-size:13px;color:var(--ag);letter-spacing:.1em;}
+
+/* Language Toggle */
+.lt{display:flex;background:var(--bg-card);border:1px solid rgba(0,212,255,.3);border-radius:20px;overflow:hidden;}
+.lb{padding:5px 13px;font-family:var(--fm);font-size:12px;font-weight:600;border:none;background:transparent;color:var(--tm);cursor:pointer;transition:all .2s;letter-spacing:.04em;}
+.lb.active{background:var(--ap);color:#000;border-radius:18px;}
+.lb:hover:not(.active){color:var(--tb);}
+
+/* Idle Screen */
+.idle{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:40px;}
+.orb{width:120px;height:120px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;}
+.orb-in{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#0a2a50,#0d4080);border:2px solid var(--ap);display:flex;align-items:center;justify-content:center;font-size:30px;z-index:2;}
+.orb-r{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(0,212,255,.3);animation:or2 2s ease-in-out infinite;}
+.orb-r:nth-child(2){animation-delay:.6s;} .orb-r:nth-child(3){animation-delay:1.2s;}
+@keyframes or2{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.8);opacity:0}}
+.idle-txt{text-align:center;}
+.idle-txt h2{font-size:20px;font-weight:600;color:var(--tb);margin-bottom:8px;}
+.idle-txt p{font-size:13px;color:var(--tm);line-height:1.6;max-width:340px;}
+.scb{padding:13px 36px;border-radius:40px;background:linear-gradient(135deg,#0a6e3f,#00c97a);border:none;color:#fff;font-family:var(--fm);font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.04em;transition:transform .18s,box-shadow .18s;box-shadow:0 6px 24px rgba(0,201,122,.35);display:flex;align-items:center;gap:8px;}
+.scb:hover{transform:scale(1.04);box-shadow:0 8px 30px rgba(0,201,122,.5);}
+
+/* Transcript */
+.ta{flex:1;overflow-y:auto;padding:18px 24px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth;}
+.ta::-webkit-scrollbar{width:4px;}
+.ta::-webkit-scrollbar-thumb{background:var(--bs);border-radius:4px;}
+.mr{display:flex;gap:10px;max-width:78%;animation:mf .3s ease-out both;}
+@keyframes mf{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.mr.bot{align-self:flex-start;} .mr.user{align-self:flex-end;flex-direction:row-reverse;}
+.ma{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px;}
+.mr.bot .ma{background:rgba(0,102,204,.3);border:1px solid var(--as);color:var(--ap);}
+.mr.user .ma{background:rgba(0,255,153,.1);border:1px solid rgba(0,255,153,.3);color:var(--ag);}
+.mb{padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.6;max-width:100%;}
+.mr.bot .mb{background:var(--bg-card);border:1px solid var(--bs);border-top-left-radius:4px;color:var(--tb);}
+.mr.user .mb{background:rgba(0,102,204,.2);border:1px solid rgba(0,150,255,.25);border-top-right-radius:4px;color:#cce8ff;}
+.mt{font-size:9px;color:var(--tm);margin-top:3px;font-family:var(--fmo);}
+.td{display:flex;align-items:center;gap:4px;padding:10px 14px;}
+.td-d{width:6px;height:6px;border-radius:50%;background:var(--tm);animation:tb2 1.2s ease-in-out infinite;}
+.td-d:nth-child(2){animation-delay:.2s;} .td-d:nth-child(3){animation-delay:.4s;}
+@keyframes tb2{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* Waveform */
+.ws{padding:10px 24px;border-top:1px solid var(--bs);border-bottom:1px solid var(--bs);background:rgba(7,15,28,.6);display:flex;align-items:center;gap:14px;min-height:50px;}
+.wl{font-size:9px;letter-spacing:.1em;color:var(--tm);text-transform:uppercase;min-width:65px;}
+.wf{flex:1;height:34px;display:flex;align-items:center;gap:2px;}
+.wb{flex:1;border-radius:2px;background:var(--ap);opacity:.5;height:4px;transition:height .05s;}
+.wb.active{opacity:1;animation:wa var(--dur,.6s) ease-in-out infinite alternate;}
+@keyframes wa{from{height:4px}to{height:var(--h,24px)}}
+
+/* Controls */
+.cz{padding:16px 24px 20px;background:rgba(7,15,28,.95);border-top:1px solid var(--bs);display:flex;flex-direction:column;gap:12px;}
+.ir{display:flex;gap:8px;align-items:center;}
+.ti{flex:1;background:var(--bg-card);border:1px solid var(--bs);border-radius:30px;padding:10px 18px;color:var(--tb);font-family:var(--fm);font-size:13px;outline:none;transition:border-color .2s;}
+.ti:focus{border-color:var(--ap);}
+.ti::placeholder{color:var(--tm);}
+.sb{width:40px;height:40px;border-radius:50%;background:var(--as);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s,background .2s;color:#fff;}
+.sb:hover{background:var(--ap);transform:scale(1.05);}
+.cc{display:flex;align-items:center;justify-content:center;gap:12px;}
+.ctb{width:44px;height:44px;border-radius:50%;border:1px solid rgba(0,212,255,.3);background:rgba(0,212,255,.06);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .18s;color:var(--tb);}
+.ctb:hover{background:rgba(0,212,255,.15);transform:scale(1.08);}
+.ctb.muted{background:rgba(255,59,92,.1);border-color:rgba(255,59,92,.4);color:var(--red);}
+.cbw{position:relative;}
+.cbr{position:absolute;inset:-8px;border-radius:50%;border:2px solid var(--ap);opacity:0;pointer-events:none;animation:brp 1.5s ease-out infinite;}
+@keyframes brp{0%{transform:scale(.9);opacity:.7}100%{transform:scale(1.5);opacity:0}}
+.ecb{width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;transition:transform .15s;background:linear-gradient(135deg,#8a0020,var(--red));box-shadow:0 4px 20px rgba(255,59,92,.4);color:#fff;}
+.ecb:hover{transform:scale(1.06);}
+.micb{width:56px;height:56px;border-radius:50%;border:2px solid rgba(0,212,255,.3);background:rgba(0,212,255,.06);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;transition:all .18s;color:var(--tb);}
+.micb:hover{background:rgba(0,212,255,.15);}
+.micb.recording{border-color:var(--aa);background:rgba(255,170,0,.12);color:var(--aa);animation:mp 1s ease-in-out infinite alternate;}
+@keyframes mp{from{box-shadow:0 0 0 0 rgba(255,170,0,.3)}to{box-shadow:0 0 0 12px rgba(255,170,0,0)}}
+.hb{text-align:center;font-size:10px;color:var(--tm);}
+
+/* TTS loading indicator */
+.tts-loading{display:none;align-items:center;gap:6px;padding:8px 14px;background:rgba(0,212,255,.06);border:1px solid var(--bs);border-radius:20px;font-size:11px;color:var(--ap);}
+.tts-loading.show{display:flex;}
+.tts-dot{width:5px;height:5px;border-radius:50%;background:var(--ap);animation:td2 1s ease-in-out infinite;}
+.tts-dot:nth-child(2){animation-delay:.2s;} .tts-dot:nth-child(3){animation-delay:.4s;}
+@keyframes td2{0%,100%{opacity:.3}50%{opacity:1}}
+
+@media(max-width:750px){.app{grid-template-columns:1fr;}.lp{display:none;}}
+*{scrollbar-width:thin;scrollbar-color:var(--bs) transparent;}
 </style>
 </head>
 <body>
-
-<!-- Circuit background -->
-<div class="circuit-bg">
-  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#00d4ff" stroke-width="0.8">
-    <!-- Horizontal traces -->
-    <line x1="0" y1="80" x2="300" y2="80"/><circle cx="300" cy="80" r="4" fill="#00d4ff"/>
-    <line x1="300" y1="80" x2="300" y2="200"/><line x1="300" y1="200" x2="600" y2="200"/>
-    <circle cx="600" cy="200" r="4" fill="#00d4ff"/>
-    <line x1="600" y1="200" x2="600" y2="120"/><line x1="600" y1="120" x2="900" y2="120"/>
-    <line x1="0" y1="300" x2="150" y2="300"/><circle cx="150" cy="300" r="4" fill="#00d4ff"/>
-    <line x1="150" y1="300" x2="150" y2="450"/><line x1="150" y1="450" x2="400" y2="450"/>
-    <circle cx="400" cy="450" r="4" fill="#00d4ff"/>
-    <line x1="400" y1="450" x2="400" y2="350"/><line x1="400" y1="350" x2="750" y2="350"/>
-    <circle cx="750" cy="350" r="6" fill="none" stroke="#00d4ff"/>
-    <line x1="750" y1="350" x2="750" y2="500"/><line x1="750" y1="500" x2="1200" y2="500"/>
-    <line x1="0" y1="600" x2="200" y2="600"/><circle cx="200" cy="600" r="4" fill="#00d4ff"/>
-    <line x1="200" y1="600" x2="200" y2="700"/><line x1="200" y1="700" x2="550" y2="700"/>
-    <circle cx="550" cy="700" r="4" fill="#00d4ff"/>
-    <line x1="550" y1="700" x2="550" y2="580"/><line x1="550" y1="580" x2="1200" y2="580"/>
-    <!-- IC pads -->
-    <rect x="880" y="100" width="80" height="60" rx="3"/>
-    <rect x="885" y="105" width="70" height="50" rx="2"/>
-    <line x1="880" y1="115" x2="860" y2="115"/><line x1="880" y1="130" x2="860" y2="130"/>
-    <line x1="880" y1="145" x2="860" y2="145"/>
-    <line x1="960" y1="115" x2="980" y2="115"/><line x1="960" y1="130" x2="980" y2="130"/>
-    <line x1="960" y1="145" x2="980" y2="145"/>
-    <rect x="650" y="320" width="60" height="60" rx="3"/>
-    <line x1="650" y1="335" x2="630" y2="335"/><line x1="650" y1="350" x2="630" y2="350"/>
-    <line x1="710" y1="335" x2="730" y2="335"/><line x1="710" y1="350" x2="730" y2="350"/>
-    <!-- Capacitors / resistors -->
-    <line x1="300" y1="150" x2="300" y2="160"/><line x1="280" y1="160" x2="320" y2="160"/>
-    <line x1="280" y1="165" x2="320" y2="165"/><line x1="300" y1="165" x2="300" y2="175"/>
-    <line x1="490" y1="450" x2="500" y2="450"/>
-    <rect x="500" y="444" width="24" height="12" rx="2"/><line x1="524" y1="450" x2="534" y2="450"/>
-  </svg>
+<div class="cbg">
+<svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#00d4ff" stroke-width="0.8">
+<line x1="0" y1="80" x2="300" y2="80"/><circle cx="300" cy="80" r="4" fill="#00d4ff"/>
+<line x1="300" y1="80" x2="300" y2="200"/><line x1="300" y1="200" x2="600" y2="200"/>
+<circle cx="600" cy="200" r="4" fill="#00d4ff"/>
+<line x1="600" y1="200" x2="600" y2="120"/><line x1="600" y1="120" x2="900" y2="120"/>
+<line x1="0" y1="300" x2="150" y2="300"/><circle cx="150" cy="300" r="4" fill="#00d4ff"/>
+<line x1="150" y1="300" x2="150" y2="450"/><line x1="150" y1="450" x2="400" y2="450"/>
+<circle cx="400" cy="450" r="4" fill="#00d4ff"/>
+<line x1="400" y1="450" x2="400" y2="350"/><line x1="400" y1="350" x2="750" y2="350"/>
+<line x1="750" y1="350" x2="750" y2="500"/><line x1="750" y1="500" x2="1200" y2="500"/>
+<line x1="0" y1="600" x2="200" y2="600"/><circle cx="200" cy="600" r="4" fill="#00d4ff"/>
+<line x1="200" y1="600" x2="200" y2="700"/><line x1="200" y1="700" x2="550" y2="700"/>
+<circle cx="550" cy="700" r="4" fill="#00d4ff"/>
+<line x1="550" y1="700" x2="550" y2="580"/><line x1="550" y1="580" x2="1200" y2="580"/>
+<rect x="880" y="100" width="80" height="60" rx="3"/>
+<line x1="880" y1="115" x2="860" y2="115"/><line x1="880" y1="130" x2="860" y2="130"/><line x1="880" y1="145" x2="860" y2="145"/>
+<line x1="960" y1="115" x2="980" y2="115"/><line x1="960" y1="130" x2="980" y2="130"/><line x1="960" y1="145" x2="980" y2="145"/>
+<rect x="650" y="320" width="60" height="60" rx="3"/>
+<line x1="650" y1="335" x2="630" y2="335"/><line x1="650" y1="350" x2="630" y2="350"/>
+<line x1="710" y1="335" x2="730" y2="335"/><line x1="710" y1="350" x2="730" y2="350"/>
+</svg>
 </div>
-
 <div class="scanline"></div>
 
-<div class="app-wrapper">
-  <!-- LEFT PANEL -->
-  <aside class="left-panel">
-    <div class="brand-header">
-      <div class="brand-logo">
-        <div class="logo-icon">DP</div>
-        <div class="brand-text">
-          <h1>DRIEMS Polytechnic</h1>
-          <p>Autonomous · Tangi, Cuttack, Odisha</p>
-        </div>
-      </div>
-      <div class="dept-badge">
-        <span>●</span> Electronics &amp; Telecommunication Engg.
-      </div>
+<div class="app">
+<!-- LEFT PANEL -->
+<aside class="lp">
+  <div class="bh">
+    <div class="bl">
+      <div class="li">DP</div>
+      <div class="bt"><h1>DRIEMS Polytechnic</h1><p>Autonomous · Tangi, Cuttack, Odisha</p></div>
     </div>
-
-    <div class="info-section">
-      <div class="info-title">Department Stats</div>
-      <div class="info-grid">
-        <div class="info-card"><span class="val">60</span><span class="lbl">Seats</span></div>
-        <div class="info-card"><span class="val">3yr</span><span class="lbl">Diploma</span></div>
-        <div class="info-card"><span class="val">100%</span><span class="lbl">Placement</span></div>
-        <div class="info-card"><span class="val">#2</span><span class="lbl">QCI Rank (Pvt)</span></div>
-      </div>
-    </div>
-
-    <div class="highlights">
-      <div class="info-title">Key Highlights</div>
-
-      <div class="highlight-item">
-        <div class="hi-icon">🔲</div>
-        <div class="hi-text">
-          <strong>VLSI Design</strong>
-          <span>Advanced chip design, digital circuits, FPGA programming &amp; IC layout</span>
-        </div>
-      </div>
-
-      <div class="highlight-item">
-        <div class="hi-icon">💻</div>
-        <div class="hi-text">
-          <strong>Computer Integration</strong>
-          <span>Embedded C, Python, IoT, Microcontrollers &amp; networking fundamentals</span>
-        </div>
-      </div>
-
-      <div class="highlight-item">
-        <div class="hi-icon">📡</div>
-        <div class="hi-text">
-          <strong>Telecom Systems</strong>
-          <span>5G basics, fiber optics, satellite comms, RF &amp; microwave technology</span>
-        </div>
-      </div>
-
-      <div class="highlight-item">
-        <div class="hi-icon">🏭</div>
-        <div class="hi-text">
-          <strong>Industry Placement</strong>
-          <span>Campus drives by top IT/electronics firms; 100% placement record</span>
-        </div>
-      </div>
-
-      <div class="highlight-item">
-        <div class="hi-icon">🏛️</div>
-        <div class="hi-text">
-          <strong>AICTE Autonomous (2026)</strong>
-          <span>First private polytechnic in Odisha to receive autonomous status</span>
-        </div>
-      </div>
-
-      <div class="highlight-item">
-        <div class="hi-icon">🔬</div>
-        <div class="hi-text">
-          <strong>IIT Bombay Virtual Lab</strong>
-          <span>Access to IIT Bombay remote lab facilities &amp; DPRISE Pre-Incubation Centre</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="contact-footer">
-      📞 <a href="tel:06712595062">0671-2595062</a> / 9438065742<br>
-      ✉️ <a href="/cdn-cgi/l/email-protection#3753455e525a44535e475b585a567753455e525a44195654195e59"><span class="__cf_email__" data-cfemail="5632243f333b25323f263a393b371632243f333b25783735783f38">[email&#160;protected]</span></a><br>
-      🌐 <a href="https://www.driemspolytechnic.org" target="_blank">driemspolytechnic.org</a>
-    </div>
-  </aside>
-
-  <!-- RIGHT PANEL -->
-  <div class="right-panel" id="rightPanel">
-    <!-- TOP BAR -->
-    <div class="top-bar">
-      <div class="caller-info">
-        <div class="avatar">
-          <div class="avatar-ring" id="avatarRing"></div>
-          <div class="avatar-circle" id="avatarCircle">A</div>
-        </div>
-        <div class="caller-meta">
-          <h2 id="botName">Arjun — ETC Counsellor</h2>
-          <p><span class="status-dot" id="statusDot"></span><span id="statusText">Ready to connect</span></p>
-        </div>
-      </div>
-      <div class="call-timer" id="callTimer" style="display:none">00:00</div>
-      <div class="lang-toggle" id="langToggle">
-        <button class="lang-btn active" id="btnEN" onclick="setLang('en')">EN</button>
-        <button class="lang-btn" id="btnOR" onclick="setLang('or')" style="font-family:'Noto Serif Odia',sans-serif;">ଓଡ଼ିଆ</button>
-      </div>
-    </div>
-
-    <!-- IDLE SCREEN -->
-    <div class="idle-screen" id="idleScreen">
-      <div class="idle-orb">
-        <div class="orb-ring"></div>
-        <div class="orb-ring"></div>
-        <div class="orb-ring"></div>
-        <div class="orb-inner">📞</div>
-      </div>
-      <div class="idle-text">
-        <h2 id="idleTitle">Talk to our ETC Counsellor</h2>
-        <p id="idleDesc">Meet <strong>Arjun</strong>, your AI admission advisor for the Electronics &amp; Telecommunication Engineering branch at DRIEMS Polytechnic. Ask him anything about admission, curriculum, placements or hostel.</p>
-      </div>
-      <button class="start-call-btn" id="startCallBtn">
-        <span>📞</span> <span id="startCallBtnText">Start Voice Call</span>
-      </button>
-    </div>
-
-    <!-- TRANSCRIPT (hidden until call starts) -->
-    <div class="transcript-area" id="transcriptArea" style="display:none"></div>
-
-    <!-- WAVEFORM (hidden until call starts) -->
-    <div class="waveform-section" id="waveformSection" style="display:none">
-      <span class="waveform-label" id="waveLabel">BOT SPEAKING</span>
-      <div class="waveform" id="waveform"></div>
-    </div>
-
-    <!-- CONTROL ZONE (hidden until call) -->
-    <div class="control-zone" id="controlZone" style="display:none">
-      <div class="input-row">
-        <input type="text" class="text-input" id="textInput" placeholder="Type your question or press mic to speak…">
-        <button class="send-btn" id="sendBtn" title="Send">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="22" y1="2" x2="11" y2="13"></line>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-          </svg>
-        </button>
-      </div>
-      <div class="call-controls">
-        <button class="ctrl-btn" id="muteBtn" title="Mute mic">🔊</button>
-        <div class="call-btn-wrap">
-          <div class="call-btn-ring ripple" id="callBtnRing"></div>
-          <button class="call-main-btn active" id="endCallBtn" title="End call">📵</button>
-        </div>
-        <button class="mic-btn" id="micBtn" title="Hold to speak">🎙️</button>
-      </div>
-      <div class="hint-bar" id="hintBar">Click 🎙️ to speak · Type and press Send · Click 📵 to end call</div>
+    <div class="db"><span>●</span> Electronics &amp; Telecommunication Engg.</div>
+  </div>
+  <div class="is">
+    <div class="it">Department Stats</div>
+    <div class="ig">
+      <div class="ic"><span class="v">60</span><span class="l">Seats</span></div>
+      <div class="ic"><span class="v">3yr</span><span class="l">Diploma</span></div>
+      <div class="ic"><span class="v">100%</span><span class="l">Placement</span></div>
+      <div class="ic"><span class="v">#2</span><span class="l">QCI Rank</span></div>
     </div>
   </div>
+  <div class="hl">
+    <div class="it">Key Highlights</div>
+    <div class="hi"><div class="hii">🔲</div><div class="hit"><strong>VLSI Design</strong><span>IC design, FPGA, digital circuits &amp; chip layout</span></div></div>
+    <div class="hi"><div class="hii">💻</div><div class="hit"><strong>Computer Integration</strong><span>Embedded C, Python, IoT &amp; networking</span></div></div>
+    <div class="hi"><div class="hii">📡</div><div class="hit"><strong>Telecom Systems</strong><span>5G, fiber optics, satellite &amp; RF engineering</span></div></div>
+    <div class="hi"><div class="hii">🏭</div><div class="hit"><strong>100% Placement</strong><span>TCS, Infosys, L&amp;T, BHEL, BSNL campus drives</span></div></div>
+    <div class="hi"><div class="hii">🏛️</div><div class="hit"><strong>AICTE Autonomous 2026</strong><span>First private polytechnic in Odisha</span></div></div>
+    <div class="hi"><div class="hii">🔬</div><div class="hit"><strong>IIT Bombay Virtual Lab</strong><span>Access to IIT remote labs &amp; Pre-Incubation Centre</span></div></div>
+  </div>
+  <div class="cf">
+    📞 <a href="tel:06712595062">0671-2595062</a> / 9438065742<br>
+    ✉️ <a href="mailto:driemsdiploma@driems.ac.in">driemsdiploma@driems.ac.in</a><br>
+    🌐 <a href="https://www.driemspolytechnic.org" target="_blank">driemspolytechnic.org</a>
+  </div>
+</aside>
+
+<!-- RIGHT PANEL -->
+<div class="rp">
+  <!-- TOP BAR -->
+  <div class="tb2">
+    <div class="ci">
+      <div class="av">
+        <div class="avr" id="avRing"></div>
+        <div class="avc">A</div>
+      </div>
+      <div class="cm">
+        <h2>Arjun — ETC Counsellor</h2>
+        <p><span class="sd" id="sDot"></span><span id="sTxt">Ready to connect</span></p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="ct" id="cTimer" style="display:none">00:00</div>
+      <div class="lt">
+        <button class="lb active" id="btnEN" onclick="setLang('en')">EN</button>
+        <button class="lb" id="btnOR" onclick="setLang('or')" style="font-family:'Noto Serif Odia',sans-serif;">ଓଡ଼ିଆ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IDLE SCREEN -->
+  <div class="idle" id="idleScreen">
+    <div class="orb">
+      <div class="orb-r"></div><div class="orb-r"></div><div class="orb-r"></div>
+      <div class="orb-in">📞</div>
+    </div>
+    <div class="idle-txt">
+      <h2 id="idleTitle">Talk to our ETC Counsellor</h2>
+      <p id="idleDesc">Meet Arjun, your AI admission advisor for the Electronics &amp; Telecommunication Engineering branch at DRIEMS Polytechnic. Ask anything about admission, curriculum or placements.</p>
+    </div>
+    <button class="scb" id="startBtn">
+      <span>📞</span><span id="startBtnTxt">Start Voice Call</span>
+    </button>
+  </div>
+
+  <!-- TRANSCRIPT -->
+  <div class="ta" id="txArea" style="display:none"></div>
+
+  <!-- WAVEFORM -->
+  <div class="ws" id="waveSection" style="display:none">
+    <span class="wl" id="waveLabel">READY</span>
+    <div class="wf" id="waveform"></div>
+    <div class="tts-loading" id="ttsLoading">
+      <div class="tts-dot"></div><div class="tts-dot"></div><div class="tts-dot"></div>
+      <span>Generating voice…</span>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="cz" id="ctrlZone" style="display:none">
+    <div class="ir">
+      <input type="text" class="ti" id="txtInput" placeholder="Type your question or press 🎙️ to speak…">
+      <button class="sb" id="sendBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+      </button>
+    </div>
+    <div class="cc">
+      <button class="ctb" id="muteBtn" title="Mute">🔊</button>
+      <div class="cbw">
+        <div class="cbr"></div>
+        <button class="ecb" id="endBtn" title="End call">📵</button>
+      </div>
+      <button class="micb" id="micBtn" title="Speak">🎙️</button>
+    </div>
+    <div class="hb" id="hintBar">Click 🎙️ to speak · Type and send · Click 📵 to end call</div>
+  </div>
+</div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-// ═══════════════════════════════════════════════════
-//  DRIEMS ETC VOICE BOT — Bilingual EN / ଓଡ଼ିଆ
-// ═══════════════════════════════════════════════════
+<script>
+// ══════════════════════════════════════════════════════
+//  DRIEMS ETC VOICE BOT  —  Clean rebuild April 2026
+//  TTS: Server-side Google TTS (Odia + English)
+//  STT: Browser Web Speech API
+// ══════════════════════════════════════════════════════
 
-const SYSTEM_PROMPT_EN = `You are Arjun, a friendly and enthusiastic human admission counsellor at DRIEMS Polytechnic (Autonomous), Tangi, Cuttack, Odisha. You speak naturally, warmly, and like a real person — not like a robot. You are an expert on the Electronics & Telecommunication Engineering (ETC) branch and DRIEMS Polytechnic overall.
+// ── System Prompts ────────────────────────────────────
+const SYS_EN = `You are Arjun, a friendly enthusiastic human admission counsellor at DRIEMS Polytechnic (Autonomous), Tangi, Cuttack, Odisha. Speak naturally and warmly like a real person, not a robot. You are expert in the Electronics & Telecommunication Engineering (ETC) branch.
 
-YOUR PERSONALITY:
-- Warm, encouraging, and conversational. Use natural phrases like "Great question!", "Absolutely!", "You know what...", "Let me tell you..."
-- Speak in short, clear sentences. Don't use bullet points in speech — talk naturally.
-- Occasionally ask the student questions to engage them.
-- Be enthusiastic about the ETC branch and DRIEMS.
+PERSONALITY: Warm, encouraging. Use phrases like "Great question!", "Absolutely!", "Let me tell you...". Short clear sentences. No bullet points — talk naturally. Ask students questions to engage them.
 
-KEY FACTS ABOUT DRIEMS POLYTECHNIC:
+DRIEMS POLYTECHNIC FACTS:
 - Full name: DRIEMS Polytechnic (Autonomous), Tangi, Cuttack, Odisha
 - Established: 2003. Contact: 0671-2595062, 9438065742, driemsdiploma@driems.ac.in
-- Website: www.driemspolytechnic.org
-- Affiliation: SCTE & VT Odisha. Approval: AICTE
+- Website: www.driemspolytechnic.org. Affiliation: SCTE & VT Odisha. Approval: AICTE
 - HISTORIC: First private polytechnic in Odisha to get Autonomous status (2026-27) under NEP-2020
-- QCI Ranking: 2nd among private polytechnics in Odisha. Total capacity: 570 students
+- QCI Ranking: 2nd among private polytechnics in Odisha. Total: 570 students
+- Courses: Mechanical (210 seats NBA), Computer Science (120 seats NBA), Electrical (120 seats NBA), Civil (60), ETC (60)
 
-COURSES: Mechanical Engg (210 seats, NBA), Computer Science (120 seats, NBA), Electrical Engg (120 seats, NBA), Civil Engg (60 seats), Electronics & Telecom Engg/ETC (60 seats)
+ETC BRANCH — always promote enthusiastically:
+- 3-year Diploma. Only 60 seats = personal attention!
+- Subjects: VLSI Design, Digital Circuits, Analog Electronics, Microprocessors, Embedded Systems, Telecom, Fiber Optics, Satellite Communication, RF & 5G basics, IoT, Embedded C, Python, Signal Processing, PCB Design
+- Computer skills: C, Embedded C, Python, Linux, Networking — dual skilled electronics AND computers
+- PLACEMENT: 100% record. Campus drives: Infosys, TCS, Wipro, L&T, BHEL, BSNL, semiconductor firms
+- Higher studies: Lateral entry B.Tech ECE/EEE/CS
+- Infrastructure: IIT Bombay Virtual Lab, DPRISE Pre-Incubation Centre, Innovation Council, Robotics Labs
+- Admission: OJEE exam. Eligibility: 10th pass with Science & Maths. www.driemspolytechnic.org/admission-procedure/
 
-ETC BRANCH (your specialty — always enthusiastically promote):
-- 3-year Diploma. 60 seats (intimate batch = more personal attention!)
-- Curriculum: Electronics, VLSI Design, Digital & Analog circuits, Microprocessors, Embedded Systems, Telecom, Fiber optics, Satellite comms, RF & 5G basics, IoT, Embedded C, Python, Signal processing, PCB design
-- VLSI: students learn IC design, FPGA programming, chip fabrication, Cadence/Mentor tools
-- Computer Skills: C, Embedded C, Python, computer architecture, networking, Linux — dual-skilled in electronics AND computers
-- PLACEMENT: 100% record. Campus drives by Infosys, TCS, Wipro, L&T, BHEL, BSNL, electronics and semiconductor firms
-- Higher studies: lateral entry into B.Tech ECE, EEE, or CS
+WHY ETC: 60 seats = personal attention. VLSI chip design industry booming. Dual electronics+computer skills. 100% placement. Autonomous cutting-edge curriculum. Near Cuttack-Bhubaneswar. IIT Bombay lab access.
 
-INFRASTRUCTURE: IIT Bombay Virtual Lab, DPRISE Pre-Incubation Centre, Innovation Council, Robotics Labs, full sports & cultural facilities
+INSTRUCTIONS: 2-4 sentences per reply. Enthusiastically highlight ETC. No markdown. End with engaging question sometimes. Direct unknown questions to website or phone 0671-2595062.`;
 
-ADMISSION: Through OJEE (Odisha Joint Entrance Examination). Eligibility: 10th pass with Science & Maths. Merit/management quota seats available. Apply: www.driemspolytechnic.org/admission-procedure/
+const SYS_OR = `ଆପଣ ଅର୍ଜୁନ, DRIEMS Polytechnic (Autonomous), ତଙ୍ଗି, କଟକ, ଓଡ଼ିଶା ର ଉତ୍ସାହୀ admission counsellor। ଓଡ଼ିଆ ଭାଷାରେ ସ୍ୱାଭାବିକ ଓ ଉଷ୍ଣ ଭାବରେ କଥା ହୁଅନ୍ତୁ। ETC branch ଏବଂ DRIEMS ବିଷୟରେ ଆପଣ ବିଶେଷଜ୍ଞ।
 
-WHY ETC AT DRIEMS: 1) Only 60 seats = personalized attention. 2) VLSI + Computer dual skills. 3) Chip design industry booming globally. 4) 100% placement. 5) Autonomous status = cutting-edge curriculum. 6) Near Cuttack-Bhubaneswar twin cities. 7) IIT Bombay virtual lab access.
+ବ୍ୟକ୍ତିତ୍ୱ: "ବହୁତ ଭଲ ପ୍ରଶ୍ନ!", "ହଁ!", "ଶୁଣନ୍ତୁ..." ଭଳି phrases। ସ୍ୱଳ୍ପ ସ୍ପଷ୍ଟ ବାକ୍ୟ। Bullet points ନୁହେଁ।
 
-INSTRUCTIONS: Keep responses conversational 2-4 sentences. Always enthusiastically highlight ETC strengths. No markdown. End with an engaging follow-up question sometimes.`;
+DRIEMS ତଥ୍ୟ:
+- DRIEMS Polytechnic (Autonomous), ତଙ୍ଗି, କଟକ, ଓଡ଼ିଶା। ଫୋନ: 0671-2595062, 9438065742
+- ୱେବସାଇଟ: www.driemspolytechnic.org। ପ୍ରତିଷ୍ଠା: ୨୦୦୩
+- ଓଡ଼ିଶାର ପ୍ରଥମ ବ୍ୟକ୍ତିଗତ polytechnic ଯାହା AICTE Autonomous (2026-27) ପାଇଛି
+- QCI: ଓଡ଼ିଶা private polytechnic ମଧ୍ୟରେ ୨ ନମ୍ବର
+- Courses: Mechanical(210), Computer(120), Electrical(120), Civil(60), ETC(60)
 
-const SYSTEM_PROMPT_OR = `ଆପଣ ଅର୍ଜୁନ, DRIEMS Polytechnic (Autonomous), ତଙ୍ଗି, କଟକ, ଓଡ଼ିଶା ର ଏକ ଉତ୍ସାହୀ admission counsellor। ଆପଣ ଓଡ଼ିଆ ଭାଷାରେ ବୋଲନ୍ତି — ସ୍ୱାଭାବିକ, ଉଷ୍ଣ ଏବଂ ବ୍ୟକ୍ତିଗତ ଭାବରେ। Electronics & Telecommunication Engineering (ETC) branch ଏବଂ DRIEMS Polytechnic ସମ୍ପର୍କରେ ଆପଣ ବିଶେଷଜ୍ଞ।
-
-ଆପଣଙ୍କ ବ୍ୟକ୍ତିତ୍ୱ:
-- ଉଷ୍ଣ, ସ୍ୱାଭାବିକ, "ବହୁତ ଭଲ ପ୍ରଶ୍ନ!", "ହଁ ବାପା!", "ଶୁଣ..." ଭଳି phrases ବ୍ୟବହାର କରନ୍ତୁ।
-- ସ୍ୱଳ୍ପ, ସ୍ପଷ୍ଟ ଓଡ଼ିଆ ବାକ୍ୟ। Bullet points ନ ବ୍ୟବହାର କରନ୍ତୁ।
-- ଛାତ୍ରଙ୍କୁ engage ରଖିବା ପାଇଁ ପ୍ରଶ୍ନ ପଚାରନ୍ତୁ।
-- ETC branch ଏବଂ DRIEMS ପ୍ରତି ଉତ୍ସାହ ଦେଖାନ୍ତୁ।
-
-DRIEMS POLYTECHNIC ବିଷୟରେ:
-- ପୁରା ନାମ: DRIEMS Polytechnic (Autonomous), ତଙ୍ଗି, କଟକ, ଓଡ଼ିଶା
-- ପ୍ରତିଷ୍ଠା: ୨୦୦୩। ଫୋନ: 0671-2595062, 9438065742
-- ଇମେଲ: driemsdiploma@driems.ac.in, ୱେବସାଇଟ: www.driemspolytechnic.org
-- ଐତିହାସିକ: ଓଡ଼ିଶାର ପ୍ରଥମ ବ୍ୟକ୍ତିଗତ polytechnic ଯାହା AICTE Autonomous ମାନ୍ୟତା ପାଇଛି (2026-27)
-- QCI Ranking: ଓଡ଼ିଶার private polytechnic ମଧ୍ୟରେ ୨ ନମ୍ବର
-
-Courses: Mechanical (210), Computer Science (120), Electrical (120), Civil (60), Electronics & Telecom/ETC (60 seats)
-
-ETC BRANCH (ଆପଣଙ୍କ specialty — ସବୁବେଳେ ଉତ୍ସାହର ସହ promote କରନ୍ତୁ):
+ETC BRANCH — ସବୁବେଳେ ଉତ୍ସାହ ସହ promote କରନ୍ତୁ:
 - ୩ ବର୍ଷ Diploma। ମାତ୍ର ୬୦ ଆସନ = ବ୍ୟକ୍ତିଗତ ଧ୍ୟାନ!
-- VLSI Design, Digital Circuits, Microprocessors, Embedded Systems, Telecommunication, IoT, Fiber Optics, 5G, PCB Design ଶିକ୍ଷା ହୁଏ
-- Computer skills: C, Embedded C, Python, Linux, Networking — electronics ଓ computer ଦୁଇଟି ଶିଖ!
-- Placement: ୧୦୦% placement record। Infosys, TCS, Wipro, L&T, BHEL, BSNL ଆସନ୍ତି
-- ଉଚ୍ଚ ଶିକ୍ଷା: B.Tech ECE/EEE/CS ରେ lateral entry ସୁଯୋଗ
+- VLSI Design, Digital Circuits, Microprocessors, Embedded Systems, Telecom, IoT, Fiber Optics, 5G, PCB Design
+- Computer: C, Embedded C, Python, Linux — electronics ଓ computer ଦୁଇଟି!
+- Placement: ୧୦୦%। Infosys, TCS, L&T, BHEL, BSNL campus drives
+- Admission: OJEE ମାଧ୍ୟମରେ। ୧୦ ମ pass (ବିଜ୍ଞାନ ଓ ଗଣିତ)
 
-ADMISSION: OJEE ମାଧ୍ୟମରେ। ୧୦ ମ ପାସ (ବିଜ୍ଞାନ ଓ ଗଣିତ ସହ)। www.driemspolytechnic.org/admission-procedure/
+ନିର୍ଦ୍ଦେଶ: ୨-୪ ବାକ୍ୟ। ETC ର ଶକ୍ତି ଉଜ୍ଜ୍ୱଳ କରନ୍ତୁ। Markdown ନୁହେଁ। ଅଜଣା ପ୍ରଶ୍ନ ପାଇଁ website ବା 0671-2595062 ରେ refer କରନ୍ତୁ।`;
 
-ନିର୍ଦ୍ଦେଶ: ୨-୪ ବାକ୍ୟ ରଖନ୍ତୁ। ETC ର ଶକ୍ତି ଉଜ୍ଜ୍ୱଳ ଭାବେ ଦେଖାନ୍ତୁ। Markdown ନ ବ୍ୟବହାର କରନ୍ତୁ। ଶେଷରେ ପ୍ରଶ୍ନ ପଚାରି engage ରଖନ୍ତୁ।`;
-
-// ─── Language config ──────────────────────────────
-const LANGS = {
+// ── Language config ───────────────────────────────────
+const LANG = {
   en: {
-    code: 'en-IN',
-    label: 'EN',
-    greeting: "Hello! This is Arjun from DRIEMS Polytechnic Admissions. Welcome! I'm here to help you with everything about our Electronics and Telecommunication Engineering branch. We have an amazing 3-year diploma program with 100% placement and cutting-edge VLSI curriculum. How can I help you today — are you thinking about admission?",
-    placeholder: 'Type your question or press 🎙️ to speak…',
-    hint: 'Click 🎙️ to speak · Type and press Send · Click 📵 to end call',
-    systemPrompt: SYSTEM_PROMPT_EN,
-    statusReady: 'Ready to connect',
-    statusConnected: '🟢 Connected',
-    statusThinking: '⚙️ Thinking…',
-    statusListening: '🎙️ Listening…',
-    statusSpeaking: '🔈 Arjun is speaking…',
-    startBtn: '📞 Start Voice Call',
-    idleTitle: 'Talk to our ETC Counsellor',
-    idleDesc: 'Meet Arjun, your AI admission advisor for the Electronics & Telecommunication Engineering branch at DRIEMS Polytechnic.',
-    ttsWarn: '⚠️ Odia TTS not found on your device. Playing text in English. For full Odia voice, use Chrome on Android with Odia TTS installed.',
-    waveBot: 'BOT SPEAKING',
-    waveUser: 'USER SPEAKING',
-    waveReady: 'READY',
+    code:'en-IN', sys:SYS_EN,
+    greeting:"Hello! This is Arjun from DRIEMS Polytechnic. Welcome! I'm your ETC admission advisor. We have an amazing 3-year diploma in Electronics and Telecommunication with 100% placement and cutting-edge VLSI curriculum. How can I help you today?",
+    placeholder:"Type your question or press 🎙️ to speak…",
+    hint:"Click 🎙️ to speak · Type and send · Click 📵 to end call",
+    statusReady:"Ready to connect", statusConn:"🟢 Connected",
+    statusThink:"⚙️ Thinking…", statusListen:"🎙️ Listening…", statusSpeak:"🔈 Arjun is speaking…",
+    startBtn:"Start Voice Call", idleTitle:"Talk to our ETC Counsellor",
+    idleDesc:"Meet Arjun, your AI admission advisor for Electronics & Telecommunication Engineering at DRIEMS Polytechnic.",
+    waveBot:"BOT SPEAKING", waveUser:"USER SPEAKING", waveReady:"READY", waveLoad:"LOADING VOICE…"
   },
   or: {
-    code: 'or-IN',
-    label: 'ଓଡ଼ିଆ',
-    greeting: 'ନମସ୍କାର! ମୁଁ ଅର୍ଜୁନ, DRIEMS Polytechnic ଆଡ୍ମିଶନ ବିଭାଗରୁ। ଆପଣଙ୍କୁ ସ୍ୱାଗତ! ଆମ Electronics & Telecommunication Engineering branch ବିଷୟରେ ସମ୍ପୂର୍ଣ୍ଣ ତଥ୍ୟ ଦେବାକୁ ମୁଁ ଏଠି ଅଛି। ୩ ବର୍ଷ Diploma, ୧୦୦% placement ଏବଂ VLSI design — ଏହା ଏକ ଅସାଧାରଣ ସୁଯୋଗ। ଆପଣ ଆଡ୍ମିଶନ ନେବାର ଭାବୁଛନ୍ତି କି?',
-    placeholder: 'ଆପଣଙ୍କ ପ୍ରଶ୍ନ ଟାଇପ କରନ୍ତୁ ବା 🎙️ ଦବାନ୍ତୁ…',
-    hint: '🎙️ ଦବାଇ ବୋଲନ୍ତୁ · ଟାଇପ ଓ Send ଦବାନ୍ତୁ · 📵 ଦବାଇ call ଶେଷ କରନ୍ତୁ',
-    systemPrompt: SYSTEM_PROMPT_OR,
-    statusReady: 'ସଂଯୋଗ ପ୍ରସ୍ତୁତ',
-    statusConnected: '🟢 ସଂଯୁକ୍ତ',
-    statusThinking: '⚙️ ଭାବୁଛି…',
-    statusListening: '🎙️ ଶୁଣୁଛି…',
-    statusSpeaking: '🔈 ଅର୍ଜୁନ ବୋଲୁଛି…',
-    startBtn: '📞 ଭଏସ୍ ଖୋଲନ୍ତୁ',
-    idleTitle: 'ETC Counsellor ସାଥିରେ କଥା ହୁଅନ୍ତୁ',
-    idleDesc: 'ଅର୍ଜୁନ ଆପଣଙ୍କ ପ୍ରଶ୍ନ ଶୁଣିବାକୁ ପ୍ରସ୍ତୁତ। DRIEMS Polytechnic ର ETC branch ବିଷୟରେ ଯେ କୌଣସି ପ୍ରଶ୍ନ ପଚାରନ୍ତୁ।',
-    ttsWarn: '⚠️ ଆପଣଙ୍କ ଡିଭାଇସରେ Odia TTS ମିଳୁ ନାହିଁ। Chrome (Android) ରେ Odia TTS ଇନ୍‌ସ୍ଟଲ ଥିଲେ ଓଡ଼ିଆ ଭଏସ ଶୁଣାଯିବ।',
-    waveBot: 'BOT ବୋଲୁଛି',
-    waveUser: 'ଆପଣ ବୋଲୁଛନ୍ତି',
-    waveReady: 'ପ୍ରସ୍ତୁତ',
+    code:'or-IN', sys:SYS_OR,
+    greeting:"ନମସ୍କାର! ମୁଁ ଅର୍ଜୁନ, DRIEMS Polytechnic ରୁ। ଆପଣଙ୍କୁ ସ୍ୱାଗତ! ଆମ Electronics ଓ Telecommunication Engineering branch ରେ ୩ ବର୍ଷ Diploma, ୧୦୦% placement ଏବଂ VLSI design ଅଛି। ଆପଣ ଆଡ୍ମିଶନ ବିଷୟରେ ଜାଣିବାକୁ ଚାହୁଁଛନ୍ତି କି?",
+    placeholder:"ଆପଣଙ୍କ ପ୍ରଶ୍ନ ଟାଇପ କରନ୍ତୁ ବା 🎙️ ଦବାନ୍ତୁ…",
+    hint:"🎙️ ଦବାଇ ବୋଲନ୍ତୁ · ଟାଇପ ଓ Send ଦବାନ୍ତୁ · 📵 ଦବାଇ ଶେଷ କରନ୍ତୁ",
+    statusReady:"ସଂଯୋଗ ପ୍ରସ୍ତୁତ", statusConn:"🟢 ସଂଯୁକ୍ତ",
+    statusThink:"⚙️ ଭାବୁଛି…", statusListen:"🎙️ ଶୁଣୁଛି…", statusSpeak:"🔈 ଅର୍ଜୁନ ବୋଲୁଛି…",
+    startBtn:"ଭଏସ୍ ଖୋଲନ୍ତୁ", idleTitle:"ETC Counsellor ସାଥିରେ କଥା ହୁଅନ୍ତୁ",
+    idleDesc:"ଅର୍ଜୁନ ଆପଣଙ୍କ ପ୍ରଶ୍ନ ଶୁଣିବାକୁ ପ୍ରସ୍ତୁତ। DRIEMS ETC branch ବିଷୟରେ ଯେ କୌଣସି ପ୍ରଶ୍ନ ପଚାରନ୍ତୁ।",
+    waveBot:"BOT ବୋଲୁଛି", waveUser:"ଆପଣ ବୋଲୁଛନ୍ତି", waveReady:"ପ୍ରସ୍ତୁତ", waveLoad:"ଭଏସ ଲୋଡ…"
   }
 };
 
-// ─── State ───────────────────────────────────────
+// ── State ─────────────────────────────────────────────
+let lang = 'en';
 let callActive = false;
-let callStartTime = null;
-let timerInterval = null;
-let conversationHistory = [];
+let callStart = null;
+let timerInt = null;
+let history = [];
 let isMuted = false;
-let isRecording = false;
-let synth = null; // replaced by server TTS
+let isRec = false;
 let recognition = null;
-let currentSpeechText = '';
-let selectedVoice = null;
-let currentLang = 'en';
+let currentAudio = null;
 
-// ─── DOM Refs ─────────────────────────────────────
-const startCallBtn = document.getElementById('startCallBtn');
-const endCallBtn = document.getElementById('endCallBtn');
-const micBtn = document.getElementById('micBtn');
-const muteBtn = document.getElementById('muteBtn');
-const sendBtn = document.getElementById('sendBtn');
-const textInput = document.getElementById('textInput');
-const transcriptArea = document.getElementById('transcriptArea');
-const waveformSection = document.getElementById('waveformSection');
-const controlZone = document.getElementById('controlZone');
-const idleScreen = document.getElementById('idleScreen');
-const waveform = document.getElementById('waveform');
-const waveLabel = document.getElementById('waveLabel');
-const statusDot = document.getElementById('statusDot');
-const statusText = document.getElementById('statusText');
-const avatarRing = document.getElementById('avatarRing');
-const callTimer = document.getElementById('callTimer');
-const startCallBtnText = document.getElementById('startCallBtnText');
-const idleTitleEl = document.getElementById('idleTitle');
-const idleDescEl = document.getElementById('idleDesc');
+// ── DOM refs ──────────────────────────────────────────
+const $id = id => document.getElementById(id);
+const idleScreen  = $id('idleScreen');
+const txArea      = $id('txArea');
+const waveSection = $id('waveSection');
+const ctrlZone    = $id('ctrlZone');
+const startBtn    = $id('startBtn');
+const endBtn      = $id('endBtn');
+const muteBtn     = $id('muteBtn');
+const micBtn      = $id('micBtn');
+const sendBtn     = $id('sendBtn');
+const txtInput    = $id('txtInput');
+const waveform    = $id('waveform');
+const waveLabel   = $id('waveLabel');
+const ttsLoading  = $id('ttsLoading');
+const sDot        = $id('sDot');
+const sTxt        = $id('sTxt');
+const avRing      = $id('avRing');
+const cTimer      = $id('cTimer');
 
-// ─── Build Waveform ───────────────────────────────
-(function buildWave() {
-  for (let i = 0; i < 40; i++) {
-    const bar = document.createElement('div');
-    bar.className = 'waveform-bar';
-    const h = Math.floor(4 + Math.random() * 24);
-    const dur = (0.3 + Math.random() * 0.5).toFixed(2);
-    bar.style.setProperty('--h', h + 'px');
-    bar.style.setProperty('--dur', dur + 's');
-    bar.style.animationDelay = (Math.random() * 0.5) + 's';
-    waveform.appendChild(bar);
+// ── Build waveform bars ───────────────────────────────
+(function(){
+  for(let i=0;i<40;i++){
+    const b=document.createElement('div');
+    b.className='wb';
+    const h=Math.floor(4+Math.random()*22);
+    const d=(0.3+Math.random()*0.5).toFixed(2);
+    b.style.setProperty('--h',h+'px');
+    b.style.setProperty('--dur',d+'s');
+    b.style.animationDelay=(Math.random()*0.5)+'s';
+    waveform.appendChild(b);
   }
 })();
 
-// ─── Language Switch ──────────────────────────────
-function setLang(lang) {
-  currentLang = lang;
-  document.getElementById('btnEN').classList.toggle('active', lang === 'en');
-  document.getElementById('btnOR').classList.toggle('active', lang === 'or');
-  const L = LANGS[lang];
-  textInput.placeholder = L.placeholder;
-  document.getElementById('hintBar').textContent = L.hint;
-  idleTitleEl.textContent = L.idleTitle;
-  idleDescEl.textContent = L.idleDesc;
-  startCallBtnText.textContent = L.startBtn;
+// ── Language switch ───────────────────────────────────
+function setLang(l) {
+  lang = l;
+  $id('btnEN').classList.toggle('active', l==='en');
+  $id('btnOR').classList.toggle('active', l==='or');
+  const L = LANG[l];
+  txtInput.placeholder = L.placeholder;
+  $id('hintBar').textContent = L.hint;
+  $id('idleTitle').textContent = L.idleTitle;
+  $id('idleDesc').textContent = L.idleDesc;
+  $id('startBtnTxt').textContent = L.startBtn;
   setStatus('', L.statusReady);
+}
 
-  // Update odia font class on transcript
-  if (lang === 'or') {
-    transcriptArea.classList.add('odia-text');
+// ── Status helpers ────────────────────────────────────
+function setStatus(state, txt) {
+  sDot.className = 'sd ' + state;
+  sTxt.textContent = txt;
+}
+
+function setBotSpeaking(on) {
+  const L = LANG[lang];
+  if(on) {
+    avRing.classList.add('pulse');
+    setStatus('speaking', L.statusSpeak);
+    waveform.querySelectorAll('.wb').forEach(b=>b.classList.add('active'));
+    waveLabel.textContent = L.waveBot;
+    waveform.querySelectorAll('.wb').forEach(b=>b.style.background='#00d4ff');
+    ttsLoading.classList.remove('show');
   } else {
-    transcriptArea.classList.remove('odia-text');
-  }
-
-  pickVoice();
-}
-
-// ─── Voice Loading ────────────────────────────────
-function pickVoice() {
-  const voices = synth.getVoices();
-  const lang = currentLang;
-
-  if (lang === 'or') {
-    selectedVoice =
-      voices.find(v => v.lang === 'or-IN') ||
-      voices.find(v => v.lang === 'or') ||
-      voices.find(v => v.name.toLowerCase().includes('oriya') || v.name.toLowerCase().includes('odia')) ||
-      null; // will warn if null
-  } else {
-    selectedVoice =
-      voices.find(v => v.lang === 'en-IN') ||
-      voices.find(v => v.name.includes('Google UK') && v.name.toLowerCase().includes('male')) ||
-      voices.find(v => v.lang.startsWith('en'));
+    avRing.classList.remove('pulse');
+    setStatus('active', L.statusConn);
+    waveform.querySelectorAll('.wb').forEach(b=>b.classList.remove('active'));
+    waveLabel.textContent = L.waveReady;
+    waveform.querySelectorAll('.wb').forEach(b=>b.style.background='#5a8aaa');
+    ttsLoading.classList.remove('show');
   }
 }
 
-// pickVoice kept for STT lang detection only
-
-// ─── TTS ──────────────────────────────────────────
-// ── Server-side Google TTS (works for Odia + English on all browsers) ──────
-let currentAudio = null;
-
-function speak(text, onEnd) {
-  // Stop any playing audio
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio.src = '';
-    currentAudio = null;
-  }
-  if (!text || !text.trim()) { if (onEnd) onEnd(); return; }
-  if (isMuted) { if (onEnd) onEnd(); return; }
-
-  const cleanText = text.replace(/[*_`#]/g, '').replace(/\n+/g, ' ');
-  setBotSpeaking(true);
-
-  fetch('/api/tts', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: cleanText, lang: currentLang })
-  })
-  .then(r => {
-    if (!r.ok) throw new Error('TTS server error');
-    return r.blob();
-  })
-  .then(blob => {
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    currentAudio = audio;
-    audio.playbackRate = 1.0;
-    audio.onended = () => {
-      URL.revokeObjectURL(url);
-      currentAudio = null;
-      setBotSpeaking(false);
-      if (onEnd) onEnd();
-    };
-    audio.onerror = () => {
-      URL.revokeObjectURL(url);
-      currentAudio = null;
-      setBotSpeaking(false);
-      if (onEnd) onEnd();
-    };
-    audio.play().catch(() => {
-      setBotSpeaking(false);
-      if (onEnd) onEnd();
-    });
-  })
-  .catch(err => {
-    console.error('TTS error:', err);
-    setBotSpeaking(false);
-    if (onEnd) onEnd();
-  });
+function showTTSLoading() {
+  waveLabel.textContent = LANG[lang].waveLoad;
+  ttsLoading.classList.add('show');
+  waveform.querySelectorAll('.wb').forEach(b=>b.classList.remove('active'));
 }
 
-// ─── Toast ────────────────────────────────────────
-function showToast(msg) {
-  const existing = document.querySelector('.tts-toast');
-  if (existing) existing.remove();
-  const toast = document.createElement('div');
-  toast.className = 'tts-toast';
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 6000);
-}
+// ── Timer ─────────────────────────────────────────────
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
 
-// ─── STT ──────────────────────────────────────────
-function setupRecognition() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) return;
-
-  recognition = new SpeechRecognition();
-  recognition.lang = LANGS[currentLang].code;
-  recognition.continuous = false;
-  recognition.interimResults = true;
-
-  let finalTranscript = '';
-  const L = LANGS[currentLang];
-
-  recognition.onstart = () => {
-    isRecording = true;
-    finalTranscript = '';
-    micBtn.classList.add('recording');
-    setStatus('listening', L.statusListening);
-    setWave(L.waveUser, '#ffaa00');
-  };
-
-  recognition.onresult = (e) => {
-    let interim = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript;
-      else interim += e.results[i][0].transcript;
-    }
-    textInput.value = finalTranscript || interim;
-  };
-
-  recognition.onend = () => {
-    isRecording = false;
-    micBtn.classList.remove('recording');
-    if (finalTranscript.trim()) {
-      sendMessage(finalTranscript.trim());
-      textInput.value = '';
-    } else {
-      setStatus('active', L.statusConnected);
-      setWave(L.waveReady, '#5a8aaa');
-    }
-  };
-
-  recognition.onerror = () => {
-    isRecording = false;
-    micBtn.classList.remove('recording');
-    setStatus('active', L.statusConnected);
-    setWave(L.waveReady, '#5a8aaa');
-  };
-}
-
-// ─── UI Helpers ───────────────────────────────────
-function setStatus(state, text) {
-  statusDot.className = 'status-dot ' + state;
-  statusText.textContent = text;
-}
-
-function setBotSpeaking(active) {
-  const L = LANGS[currentLang];
-  if (active) {
-    avatarRing.classList.add('pulse');
-    setStatus('speaking', L.statusSpeaking);
-    activateWave(true);
-    setWave(L.waveBot, '#00d4ff');
-  } else {
-    avatarRing.classList.remove('pulse');
-    setStatus('active', L.statusConnected);
-    activateWave(false);
-    setWave(L.waveReady, '#5a8aaa');
-  }
-}
-
-function activateWave(on) {
-  waveform.querySelectorAll('.waveform-bar').forEach(b => {
-    b.classList.toggle('active', on);
-  });
-}
-
-function setWave(label, color) {
-  waveLabel.textContent = label;
-  waveform.querySelectorAll('.waveform-bar').forEach(b => {
-    b.style.background = color;
-  });
-}
-
-function formatTime(secs) {
-  const m = String(Math.floor(secs / 60)).padStart(2, '0');
-  const s = String(secs % 60).padStart(2, '0');
-  return m + ':' + s;
-}
-
-function addMessage(role, text) {
+// ── Add chat message ──────────────────────────────────
+function addMsg(role, text) {
   const row = document.createElement('div');
-  row.className = 'msg-row ' + role;
-
+  row.className = 'mr ' + role;
   const av = document.createElement('div');
-  av.className = 'msg-avatar';
-  av.textContent = role === 'bot' ? 'A' : 'U';
-
-  const bubble = document.createElement('div');
-  bubble.className = 'msg-bubble' + (currentLang === 'or' ? ' odia-text' : '');
-  bubble.textContent = text;
-
+  av.className = 'ma';
+  av.textContent = role==='bot' ? 'A' : 'U';
   const wrap = document.createElement('div');
-  const time = document.createElement('div');
-  time.className = 'msg-time';
-  time.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  wrap.appendChild(bubble);
-  wrap.appendChild(time);
+  const bub = document.createElement('div');
+  bub.className = 'mb';
+  bub.textContent = text;
+  const ts = document.createElement('div');
+  ts.className = 'mt';
+  ts.textContent = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  wrap.appendChild(bub);
+  wrap.appendChild(ts);
   row.appendChild(av);
   row.appendChild(wrap);
-  transcriptArea.appendChild(row);
-  transcriptArea.scrollTop = transcriptArea.scrollHeight;
+  txArea.appendChild(row);
+  txArea.scrollTop = txArea.scrollHeight;
 }
 
 function showTyping() {
   const row = document.createElement('div');
-  row.className = 'msg-row bot';
-  row.id = 'typingRow';
-
+  row.className = 'mr bot'; row.id = 'typRow';
   const av = document.createElement('div');
-  av.className = 'msg-avatar';
-  av.textContent = 'A';
+  av.className = 'ma'; av.textContent = 'A';
+  const bub = document.createElement('div');
+  bub.className = 'mb td';
+  for(let i=0;i<3;i++){const d=document.createElement('div');d.className='td-d';bub.appendChild(d);}
+  row.appendChild(av); row.appendChild(bub);
+  txArea.appendChild(row);
+  txArea.scrollTop = txArea.scrollHeight;
+}
 
-  const bubble = document.createElement('div');
-  bubble.className = 'msg-bubble typing-indicator';
-  for (let i = 0; i < 3; i++) {
-    const d = document.createElement('div');
-    d.className = 'typing-dot';
-    bubble.appendChild(d);
+function removeTyping(){const r=$id('typRow');if(r)r.remove();}
+
+// ── Server-side TTS (Google Translate engine) ─────────
+function speak(text, onEnd) {
+  // Stop any currently playing audio
+  if(currentAudio){
+    currentAudio.pause();
+    currentAudio.src='';
+    currentAudio=null;
   }
+  if(!text||!text.trim()){if(onEnd)onEnd();return;}
+  if(isMuted){if(onEnd)onEnd();return;}
 
-  row.appendChild(av);
-  row.appendChild(bubble);
-  transcriptArea.appendChild(row);
-  transcriptArea.scrollTop = transcriptArea.scrollHeight;
-}
+  const clean = text.replace(/[*_`#]/g,'').replace(/\n+/g,' ').trim();
+  showTTSLoading();
 
-function removeTyping() {
-  const r = document.getElementById('typingRow');
-  if (r) r.remove();
-}
-
-// ─── API Call ─────────────────────────────────────
-async function callAPI(userMessage) {
-  const L = LANGS[currentLang];
-  conversationHistory.push({ role: 'user', content: userMessage });
-
-  showTyping();
-  setStatus('active', L.statusThinking);
-
-  try {
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: L.systemPrompt,
-        messages: conversationHistory
-      })
+  fetch('/api/tts', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({text:clean, lang:lang})
+  })
+  .then(r=>{
+    if(!r.ok) throw new Error('TTS failed '+r.status);
+    return r.blob();
+  })
+  .then(blob=>{
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    currentAudio = audio;
+    setBotSpeaking(true);
+    audio.onended = ()=>{
+      URL.revokeObjectURL(url);
+      currentAudio=null;
+      setBotSpeaking(false);
+      if(onEnd)onEnd();
+    };
+    audio.onerror = ()=>{
+      URL.revokeObjectURL(url);
+      currentAudio=null;
+      setBotSpeaking(false);
+      if(onEnd)onEnd();
+    };
+    audio.play().catch(e=>{
+      console.error('Audio play error:',e);
+      setBotSpeaking(false);
+      if(onEnd)onEnd();
     });
+  })
+  .catch(err=>{
+    console.error('TTS error:',err);
+    ttsLoading.classList.remove('show');
+    setBotSpeaking(false);
+    if(onEnd)onEnd();
+  });
+}
 
-    if (!response.ok) throw new Error('API error ' + response.status);
+function stopAudio(){
+  if(currentAudio){currentAudio.pause();currentAudio.src='';currentAudio=null;}
+  setBotSpeaking(false);
+}
 
-    const data = await response.json();
-    const replyText = data.content?.[0]?.text ||
-      (currentLang === 'or'
-        ? 'ଦୁଃଖିତ, ଏକ ଛୋଟ ସମସ୍ୟା ହୋଇଛି। ଦୟାକରି ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।'
-        : "Sorry, I couldn't process that. Please try again.");
+// ── Speech recognition (STT) ──────────────────────────
+function setupSTT() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR) return;
+  recognition = new SR();
+  recognition.lang = LANG[lang].code;
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  let final = '';
 
+  recognition.onstart = ()=>{
+    isRec=true; final='';
+    micBtn.classList.add('recording');
+    setStatus('listening', LANG[lang].statusListen);
+    waveLabel.textContent = LANG[lang].waveUser;
+    waveform.querySelectorAll('.wb').forEach(b=>{b.style.background='#ffaa00';b.classList.add('active');});
+  };
+  recognition.onresult = e=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) final+=e.results[i][0].transcript;
+      else interim+=e.results[i][0].transcript;
+    }
+    txtInput.value = final||interim;
+  };
+  recognition.onend = ()=>{
+    isRec=false;
+    micBtn.classList.remove('recording');
+    waveform.querySelectorAll('.wb').forEach(b=>{b.style.background='#5a8aaa';b.classList.remove('active');});
+    if(final.trim()){sendMsg(final.trim());txtInput.value='';}
+    else setStatus('active', LANG[lang].statusConn);
+  };
+  recognition.onerror = ()=>{
+    isRec=false;
+    micBtn.classList.remove('recording');
+    waveform.querySelectorAll('.wb').forEach(b=>{b.style.background='#5a8aaa';b.classList.remove('active');});
+    setStatus('active', LANG[lang].statusConn);
+  };
+}
+
+// ── Claude API ────────────────────────────────────────
+async function callAPI(userMsg) {
+  history.push({role:'user',content:userMsg});
+  showTyping();
+  setStatus('active', LANG[lang].statusThink);
+  try {
+    const r = await fetch('/api/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({system:LANG[lang].sys, messages:history})
+    });
+    if(!r.ok) throw new Error('API '+r.status);
+    const data = await r.json();
+    const reply = data.content?.[0]?.text ||
+      (lang==='or'?'ଦୁଃଖିତ, ଏକ ସମସ୍ୟା ହୋଇଛି। ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।':"Sorry, a small issue occurred. Please try again.");
     removeTyping();
-    conversationHistory.push({ role: 'assistant', content: replyText });
-    addMessage('bot', replyText);
-    speak(replyText);
-
-  } catch (err) {
+    history.push({role:'assistant',content:reply});
+    addMsg('bot', reply);
+    speak(reply);
+  } catch(err) {
     removeTyping();
-    const fallback = currentLang === 'or'
-      ? 'ଦୁଃଖିତ, ଏକ ଛୋଟ ଯୋଗାଯୋଗ ସମସ୍ୟା ହୋଇଛି। ଆମ ନମ୍ବରରେ ଫୋନ କରନ୍ତୁ: 0671-2595062'
-      : "I'm having a small technical issue. Please call us at 0671-2595062!";
-    addMessage('bot', fallback);
-    speak(fallback);
+    const fb = lang==='or'
+      ?'ଦୁଃଖିତ, ଯୋଗାଯୋଗ ସମସ୍ୟା। ଆମ ନମ୍ବରରେ ଫୋନ କରନ୍ତୁ: 0671-2595062'
+      :"Sorry, connection issue. Please call us at 0671-2595062!";
+    addMsg('bot', fb);
+    speak(fb);
+    console.error('API error:',err);
   }
 }
 
-// ─── Send Message ─────────────────────────────────
-function sendMessage(text) {
-  if (!text.trim() || !callActive) return;
-  if (currentAudio) { currentAudio.pause(); currentAudio.src = ''; currentAudio = null; }
-  setBotSpeaking(false);
-  addMessage('user', text);
+function sendMsg(text) {
+  if(!text.trim()||!callActive) return;
+  stopAudio();
+  addMsg('user', text);
   callAPI(text);
 }
 
-// ─── Call Control ─────────────────────────────────
+// ── Call start / end ──────────────────────────────────
 function startCall() {
   callActive = true;
-  callStartTime = Date.now();
-  conversationHistory = [];
+  callStart = Date.now();
+  history = [];
 
-  pickVoice();
-  idleScreen.style.display = 'none';
-  transcriptArea.style.display = 'flex';
-  waveformSection.style.display = 'flex';
-  controlZone.style.display = 'flex';
-  callTimer.style.display = 'block';
+  // Show call UI, hide idle
+  idleScreen.style.display  = 'none';
+  txArea.style.display      = 'flex';
+  waveSection.style.display = 'flex';
+  ctrlZone.style.display    = 'flex';
+  cTimer.style.display      = 'block';
 
-  const L = LANGS[currentLang];
-  setStatus('active', L.statusConnected);
-  activateWave(false);
-  setupRecognition();
+  setStatus('active', LANG[lang].statusConn);
+  setupSTT();
 
-  timerInterval = setInterval(() => {
-    callTimer.textContent = formatTime(Math.floor((Date.now() - callStartTime) / 1000));
-  }, 1000);
+  timerInt = setInterval(()=>{
+    cTimer.textContent = fmt(Math.floor((Date.now()-callStart)/1000));
+  },1000);
 
-  setTimeout(() => {
-    conversationHistory.push({ role: 'assistant', content: L.greeting });
-    addMessage('bot', L.greeting);
-    speak(L.greeting);
-  }, 600);
+  // Send greeting after short delay
+  setTimeout(()=>{
+    const greet = LANG[lang].greeting;
+    history.push({role:'assistant',content:greet});
+    addMsg('bot', greet);
+    speak(greet);
+  }, 500);
 }
 
 function endCall() {
   callActive = false;
-  if (currentAudio) { currentAudio.pause(); currentAudio.src = ''; currentAudio = null; }
-  if (recognition) try { recognition.stop(); } catch(e){}
-  clearInterval(timerInterval);
-  setBotSpeaking(false);
+  stopAudio();
+  if(recognition) try{recognition.stop();}catch(e){}
+  clearInterval(timerInt);
 
-  transcriptArea.style.display = 'none';
-  waveformSection.style.display = 'none';
-  controlZone.style.display = 'none';
-  callTimer.style.display = 'none';
-  idleScreen.style.display = 'flex';
-  setStatus('', LANGS[currentLang].statusReady);
-  callTimer.textContent = '00:00';
-  conversationHistory = [];
-  transcriptArea.innerHTML = '';
+  // Show idle, hide call UI
+  idleScreen.style.display  = 'flex';
+  txArea.style.display      = 'none';
+  waveSection.style.display = 'none';
+  ctrlZone.style.display    = 'none';
+  cTimer.style.display      = 'none';
+  cTimer.textContent        = '00:00';
+
+  setStatus('', LANG[lang].statusReady);
+  history = [];
+  txArea.innerHTML = '';
 }
 
-// ─── Event Listeners ──────────────────────────────
-startCallBtn.addEventListener('click', startCall);
-endCallBtn.addEventListener('click', endCall);
+// ── Event listeners ───────────────────────────────────
+startBtn.addEventListener('click', startCall);
+endBtn.addEventListener('click', endCall);
 
-sendBtn.addEventListener('click', () => {
-  const txt = textInput.value.trim();
-  if (txt) { sendMessage(txt); textInput.value = ''; }
+sendBtn.addEventListener('click', ()=>{
+  const t=txtInput.value.trim();
+  if(t){sendMsg(t);txtInput.value='';}
 });
 
-textInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    const txt = textInput.value.trim();
-    if (txt) { sendMessage(txt); textInput.value = ''; }
+txtInput.addEventListener('keydown', e=>{
+  if(e.key==='Enter'){
+    const t=txtInput.value.trim();
+    if(t){sendMsg(t);txtInput.value='';}
   }
 });
 
-micBtn.addEventListener('click', () => {
-  if (!recognition || !window.SpeechRecognition && !window.webkitSpeechRecognition) {
-    alert('Speech recognition not supported. Use Chrome or Edge.');
-    return;
+micBtn.addEventListener('click', ()=>{
+  if(!recognition){
+    setupSTT();
+    if(!recognition){alert('Speech recognition not supported. Use Chrome or Edge.');return;}
   }
-  if (isRecording) {
-    recognition.stop();
-  } else {
-    if (currentAudio) { currentAudio.pause(); currentAudio.src = ''; currentAudio = null; }
-    setBotSpeaking(false);
-    // Re-create recognition with current lang
-    setupRecognition();
-    try { recognition.start(); } catch(e) {}
+  if(isRec){recognition.stop();}
+  else{
+    stopAudio();
+    // Re-create with current lang
+    setupSTT();
+    try{recognition.start();}catch(e){console.error(e);}
   }
 });
 
-muteBtn.addEventListener('click', () => {
+muteBtn.addEventListener('click', ()=>{
   isMuted = !isMuted;
-  if (isMuted && currentAudio) {
-    currentAudio.pause();
-    currentAudio.src = '';
-    currentAudio = null;
-    setBotSpeaking(false);
-  }
+  if(isMuted) stopAudio();
   muteBtn.textContent = isMuted ? '🔇' : '🔊';
   muteBtn.classList.toggle('muted', isMuted);
 });
 
-// Init lang UI
+// Init
 setLang('en');
 </script>
 </body>
