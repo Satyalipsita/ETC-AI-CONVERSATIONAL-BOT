@@ -1,5 +1,6 @@
 const express  = require('express');
 const fetch    = require('node-fetch');
+const axios    = require('axios');
 const twilio   = require('twilio');
 const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
@@ -8,7 +9,6 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static('public'));
-app.get('/ping', (req, res) => res.send('ok'));
 
 // ── Config ───────────────────────────────────────────────────────────────────
 const TWILIO_SID   = process.env.TWILIO_ACCOUNT_SID;
@@ -16,6 +16,8 @@ const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN;
 const TWILIO_FROM  = process.env.TWILIO_PHONE_NUMBER;   // e.g. +12015550123
 const PUBLIC_URL   = process.env.PUBLIC_URL;            // e.g. https://driems-etc-bot.onrender.com
 const ANTH_KEY     = process.env.ANTHROPIC_API_KEY;
+const XI_KEY       = process.env.ELEVENLABS_API_KEY;
+const XI_VOICE     = process.env.ELEVENLABS_VOICE_ID || 'pNInz6obpgDQGcFmaJgB';
 
 const twilioClient = twilio(TWILIO_SID, TWILIO_TOKEN);
 
@@ -75,44 +77,31 @@ const GREET = {
   or: "ନମସ୍କାର! ମୁଁ ଅର୍ଜୁନ, DRIEMS Polytechnic, କଟକ ରୁ ଫୋନ କରୁଛି। Electronics ଓ Telecommunication Diploma admission ବିଷୟରେ ଆପଣଙ୍କ ସହ କଥା ହେବାକୁ ଚାହୁଁଥିଲି। ଏବେ ଦୁଇ ମିନିଟ ସମୟ ଅଛି କି?"
 };
 
-// ── Google TTS helper ─────────────────────────────────────────────────────────
-function splitText(str, max) {
-  const chunks = [];
-  const sents  = str.replace(/([।.!?])\s*/g, '$1|').split('|');
-  let cur = '';
-  for (const s of sents) {
-    if (!s.trim()) continue;
-    if ((cur + s).length > max) {
-      if (cur.trim()) chunks.push(cur.trim());
-      cur = s.length > max ? '' : s;
-      if (s.length > max) {
-        s.split(' ').forEach(w => {
-          if ((cur + ' ' + w).length > max) { if (cur.trim()) chunks.push(cur.trim()); cur = w; }
-          else cur += (cur ? ' ' : '') + w;
-        });
-      }
-    } else { cur += (cur ? ' ' : '') + s; }
-  }
-  if (cur.trim()) chunks.push(cur.trim());
-  return chunks.filter(c => c.length > 0);
-}
-
+// ── ElevenLabs TTS helper (replaces Google TTS) ───────────────────────────────
+// Uses eleven_multilingual_v2 model — supports Odia & Hindi natively
 async function makeTTS(text, lang) {
-  const glang   = lang === 'or' ? 'or' : 'en-IN';
-  const chunks  = splitText(text.trim(), 190);
-  const bufs    = [];
-  for (const chunk of chunks) {
-    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunk)}&tl=${glang}&client=tw-ob&ttsspeed=0.9`;
-    const r = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Referer':    'https://translate.google.com/'
+  const response = await axios.post(
+    `https://api.elevenlabs.io/v1/text-to-speech/${XI_VOICE}`,
+    {
+      text: text.trim(),
+      model_id: 'eleven_multilingual_v2',
+      voice_settings: {
+        stability: 0.5,
+        similarity_boost: 0.75,
+        style: 0.3,
+        use_speaker_boost: true
       }
-    });
-    if (!r.ok) throw new Error('Google TTS HTTP ' + r.status);
-    bufs.push(await r.buffer());
-  }
-  return Buffer.concat(bufs);
+    },
+    {
+      headers: {
+        'xi-api-key': XI_KEY,
+        'Content-Type': 'application/json',
+        'Accept': 'audio/mpeg'
+      },
+      responseType: 'arraybuffer'
+    }
+  );
+  return Buffer.from(response.data);
 }
 
 // ── Web chat: /api/tts ────────────────────────────────────────────────────────
@@ -120,12 +109,12 @@ app.post('/api/tts', async (req, res) => {
   const { text, lang } = req.body;
   if (!text?.trim()) return res.status(400).json({ error: 'No text' });
   try {
-    const buf = await makeTTS(text, lang || 'en');
+    const buf = await makeTTS(text, lang || 'or');
     res.set('Content-Type', 'audio/mpeg');
     res.set('Cache-Control', 'no-store');
     res.send(buf);
   } catch (e) {
-    console.error('TTS error:', e.message);
+    console.error('TTS error:', e.response?.data || e.message);
     res.status(500).json({ error: e.message });
   }
 });
@@ -137,8 +126,8 @@ app.post('/api/chat', async (req, res) => {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Content-Type':   'application/json',
-        'x-api-key':      ANTH_KEY,
+        'Content-Type':      'application/json',
+        'x-api-key':         ANTH_KEY,
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system, messages })
@@ -169,15 +158,15 @@ async function claudeReply(history, lang) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
-      'Content-Type':   'application/json',
-      'x-api-key':      ANTH_KEY,
+      'Content-Type':      'application/json',
+      'x-api-key':         ANTH_KEY,
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model:      'claude-sonnet-4-20250514',
       max_tokens: 300,
-      system: SYS[lang] || SYS.or,
-      messages: history
+      system:     SYS[lang] || SYS.or,
+      messages:   history
     })
   });
   const data = await r.json();
@@ -193,12 +182,12 @@ function buildTwiML(audioUrl, gatherAction, gatherLang, hangup = false) {
     r.hangup();
   } else {
     const g = r.gather({
-      input:        'speech',
-      action:       gatherAction,
-      method:       'POST',
-      language:     gatherLang,
+      input:         'speech',
+      action:        gatherAction,
+      method:        'POST',
+      language:      gatherLang,
       speechTimeout: '3',
-      timeout:      '10'
+      timeout:       '10'
     });
     // Silence during gather
     g.pause({ length: 1 });
@@ -219,11 +208,11 @@ app.post('/api/outbound-call', async (req, res) => {
 
   try {
     const call = await twilioClient.calls.create({
-      to:  phone,
-      from: TWILIO_FROM,
-      url: `${PUBLIC_URL}/call/start?lang=${lang}`,
+      to:     phone,
+      from:   TWILIO_FROM,
+      url:    `${PUBLIC_URL}/call/start?lang=${lang}`,
       method: 'POST',
-      statusCallback: `${PUBLIC_URL}/call/status`,
+      statusCallback:       `${PUBLIC_URL}/call/status`,
       statusCallbackMethod: 'POST'
     });
     res.json({ success: true, callSid: call.sid, status: call.status });
@@ -235,7 +224,7 @@ app.post('/api/outbound-call', async (req, res) => {
 
 // ── POST /call/start — Twilio webhook when call is answered ──────────────────
 app.post('/call/start', async (req, res) => {
-  const lang   = req.query.lang || 'or';
+  const lang    = req.query.lang || 'or';
   const callSid = req.body.CallSid;
 
   // Init conversation history
@@ -246,7 +235,7 @@ app.post('/call/start', async (req, res) => {
     const state = callStore.get(callSid);
     state.history.push({ role: 'assistant', content: greetText });
 
-    const audioUrl = await ttsUrl(greetText, lang);
+    const audioUrl  = await ttsUrl(greetText, lang);
     const gatherLang = lang === 'or' ? 'or-IN' : 'en-IN';
     const twiml = buildTwiML(
       audioUrl,
@@ -342,6 +331,9 @@ app.get('/api/call-status/:sid', async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
+// ── Health check for UptimeRobot ──────────────────────────────────────────────
+app.get('/ping', (req, res) => res.status(200).send('ok'));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('DRIEMS Bot running on port ' + PORT));
