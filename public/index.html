@@ -229,7 +229,7 @@ body{font-family:var(--fm);background:var(--bg-deep);color:var(--tb);height:100v
   </div>
   <div class="cf">
     📞 <a href="tel:06712595062">0671-2595062</a> / 9438065742<br>
-    ✉️ <a href="/cdn-cgi/l/email-protection#5733253e323a24333e273b383a361733253e323a24793634793e39"><span class="__cf_email__" data-cfemail="b4d0c6ddd1d9c7d0ddc4d8dbd9d5f4d0c6ddd1d9c79ad5d79addda">[email&#160;protected]</span></a><br>
+    ✉️ <a href="mailto:driemsdiploma@driems.ac.in">driemsdiploma@driems.ac.in</a><br>
     🌐 <a href="https://www.driemspolytechnic.org" target="_blank">driemspolytechnic.org</a>
   </div>
 </aside>
@@ -376,7 +376,7 @@ body{font-family:var(--fm);background:var(--bg-deep);color:var(--tb);height:100v
 </div><!-- end rp -->
 </div><!-- end app -->
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 // ══════════════════════════════════════════════════════
 //  DRIEMS ETC BOT  —  Web Chat + Outbound Calling
 //  TTS: Server-side Google TTS
@@ -763,4 +763,14 @@ async function startBulk(){
   }
 
   bulkRunning=false;
-  btn.disabled=false;$('bulkBtnTxt').textC
+  btn.disabled=false;$('bulkBtnTxt').textContent='Launch Bulk Calls';
+  $('ocStatusBar').textContent=`Bulk calling done. ${nums.length} calls placed.`;
+}
+
+function clearLog(){callLog=[];renderLog();$('ocStatusBar').textContent='Call log cleared.';}
+
+// Init
+setLang('en');
+</script>
+</body>
+</html>
