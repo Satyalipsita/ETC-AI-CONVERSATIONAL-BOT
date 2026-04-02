@@ -1,44 +1,57 @@
 const express = require('express');
 const fetch   = require('node-fetch');
+const twilio  = require('twilio');
+const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 app.use(express.static('public'));
 
-// ── Keep-alive ping (prevents Render free tier from sleeping) ────────────────
+// ── Keep-alive (UptimeRobot pings this every 5 min) ──────────────────────────
 app.get('/ping', (req, res) => res.send('ok'));
 
 // ── Config ───────────────────────────────────────────────────────────────────
-const ANTH_KEY          = process.env.ANTHROPIC_API_KEY;
-const VAPI_KEY          = process.env.VAPI_API_KEY;
-const VAPI_ASSISTANT_ID = process.env.VAPI_ASSISTANT_ID;   // from VAPI dashboard
-const VAPI_PHONE_ID     = process.env.VAPI_PHONE_NUMBER_ID; // from VAPI dashboard
+const ANTH_KEY     = process.env.ANTHROPIC_API_KEY;
+const TW_SID       = process.env.TWILIO_ACCOUNT_SID;
+const TW_TOKEN     = process.env.TWILIO_AUTH_TOKEN;
+const TW_FROM      = process.env.TWILIO_PHONE_NUMBER;
+const PUBLIC_URL   = process.env.PUBLIC_URL;
 
-// ── System prompts (used for web chat) ───────────────────────────────────────
+// ── System prompts ───────────────────────────────────────────────────────────
 const SYS_EN = `You are Arjun, a friendly enthusiastic admission counsellor at DRIEMS Polytechnic (Autonomous), Tangi, Cuttack, Odisha. Speak naturally and warmly like a real person. Expert in Electronics & Telecommunication Engineering (ETC) branch.
+PERSONALITY: Warm, encouraging. Short clear sentences. No bullet points.
+DRIEMS FACTS: Est. 2003. Contact: 0671-2595062, driemsdiploma@driems.ac.in. www.driemspolytechnic.org. AICTE Autonomous 2026 (first private poly in Odisha). QCI #2.
+ETC: 3yr Diploma, 60 seats, VLSI, Embedded Systems, IoT, 5G, Python, C, 100% placement — TCS/Infosys/Wipro/L&T/BHEL/BSNL. IIT Bombay Virtual Lab. Admission via OJEE, 10th pass.
+PHONE CALL RULES: Max 2-3 short sentences. Natural phone conversation. Ask one question to keep engagement.`;
 
-PERSONALITY: Warm, encouraging. "Great question!", "Absolutely!", "Let me tell you...". Short clear sentences. No bullet points. Ask questions to engage.
+const SYS_OR = `ଆପଣ ଅର୍ଜୁନ, DRIEMS Polytechnic (Autonomous), ତଙ୍ଗି, କଟକ, ଓଡ଼ିଶା ର ଉତ୍ସାହୀ admission counsellor। ଓଡ଼ିଆ ଭାଷାରେ ସ୍ୱାଭାବିକ ଭାବରେ କଥା ହୁଅନ୍ତୁ।
+DRIEMS: ଫୋନ 0671-2595062। AICTE Autonomous 2026। ETC Branch: ୩ ବର୍ଷ Diploma, ୬୦ ଆସନ, VLSI, IoT, 5G, Python, ୧୦୦% placement।
+ଫୋନ CALL: ସର୍ବଧ ୨-୩ ଛୋଟ ବାକ୍ୟ। ସ୍ୱାଭାବିକ ଭାବରେ। ଗୋଟିଏ ପ୍ରଶ୍ନ ପଚାରନ୍ତୁ।`;
 
-DRIEMS FACTS: Established 2003. Contact: 0671-2595062, driemsdiploma@driems.ac.in. Website: www.driemspolytechnic.org. AICTE Autonomous (first private polytechnic in Odisha, 2026). QCI #2 in Odisha.
-Courses: Mechanical(210 NBA), Computer(120 NBA), Electrical(120 NBA), Civil(60), ETC(60 seats).
-ETC: 3yr Diploma, 60 seats, VLSI Design, Embedded Systems, IoT, 5G, Fiber Optics, Embedded C, Python, 100% placement — TCS/Infosys/Wipro/L&T/BHEL/BSNL. IIT Bombay Virtual Lab. Admission via OJEE, 10th pass Science+Maths.
+const GREET = {
+  en: "Hello! This is Arjun calling from DRIEMS Polytechnic, Cuttack. I'm calling about our Electronics and Telecommunication Engineering diploma — we have 100% placement and excellent VLSI curriculum. Do you have two minutes to chat?",
+  or: "ନମସ୍କାର! ମୁଁ ଅର୍ଜୁନ, DRIEMS Polytechnic, କଟକ ରୁ ଫୋନ କରୁଛି। ଆମ Electronics ଓ Telecommunication Diploma ବିଷୟରେ ଦୁଇ ମିନିଟ କଥା ହୋଇ ପାରିବ କି?"
+};
 
-INSTRUCTIONS: 2-4 sentences per reply. Enthusiastically highlight ETC. No markdown. End with question sometimes.`;
+const BYE_WORDS = ['bye','goodbye','no thank','not interested','hang up',
+  'ଠିକ ଅଛି','ଧନ୍ୟବାଦ','ବିଦାୟ','ଆଉ ନାହିଁ','ରଖ','ଭଲ ଅଛି'];
 
-const SYS_OR = `ଆପଣ ଅର୍ଜୁନ, DRIEMS Polytechnic (Autonomous), ତଙ୍ଗି, କଟକ, ଓଡ଼ିଶା ର ଉତ୍ସାହୀ admission counsellor। ଓଡ଼ିଆ ଭାଷାରେ ସ୍ୱାଭାବିକ ଓ ଉଷ୍ଣ ଭାବରେ କଥା ହୁଅନ୍ତୁ।
+// ── In-memory stores ─────────────────────────────────────────────────────────
+const audioStore = new Map();  // id → { buf, ts }
+const callStore  = new Map();  // callSid → { history, lang }
 
-ବ୍ୟକ୍ତିତ୍ୱ: "ବହୁତ ଭଲ ପ୍ରଶ୍ନ!", "ହଁ!", "ଦେଖନ୍ତୁ..." ଭଳି phrases। ସ୍ୱଳ୍ପ ସ୍ପଷ୍ଟ ବାକ୍ୟ। Bullet points ନୁହେଁ।
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, { ts }] of audioStore)
+    if (now - ts > 600000) audioStore.delete(id);
+}, 600000);
 
-DRIEMS ତଥ୍ୟ: ପ୍ରତିଷ୍ଠା ୨୦୦୩। ଫୋନ: 0671-2595062। AICTE Autonomous (ଓଡ଼ିଶାରେ ପ୍ରଥମ, 2026)। QCI #2।
-ETC Branch: ୩ ବର୍ଷ Diploma, ୬୦ ଆସନ, VLSI, Embedded Systems, IoT, 5G, Python, C। ୧୦୦% placement — TCS/Infosys/L&T/BHEL। OJEE ମାଧ୍ୟମରେ admission, ୧୦ ମ pass।
-
-ନିର୍ଦ୍ଦେଶ: ୨-୪ ବାକ୍ୟ। ETC ର ଶକ୍ତି ଦେଖାନ୍ତୁ। Markdown ନୁହେଁ।`;
-
-// ── Google TTS (web chat only) ────────────────────────────────────────────────
+// ── Google TTS helper ─────────────────────────────────────────────────────────
 function splitText(str, max) {
   const chunks = [];
-  const sents  = str.replace(/([।.!?])\s*/g, '$1|').split('|');
+  const sents = str.replace(/([।.!?])\s*/g, '$1|').split('|');
   let cur = '';
   for (const s of sents) {
     if (!s.trim()) continue;
@@ -58,15 +71,14 @@ function splitText(str, max) {
 }
 
 async function makeTTS(text, lang) {
-  const glang  = lang === 'or' ? 'or' : 'en-IN';
-  const chunks = splitText(text.trim(), 190);
-  const bufs   = [];
-  for (const chunk of chunks) {
-    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunk)}&tl=${glang}&client=tw-ob&ttsspeed=0.9`;
+  const gl = lang === 'or' ? 'or' : 'en-IN';
+  const bufs = [];
+  for (const chunk of splitText(text.trim(), 190)) {
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunk)}&tl=${gl}&client=tw-ob&ttsspeed=0.9`;
     const r = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        'Referer':    'https://translate.google.com/'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://translate.google.com/'
       }
     });
     if (!r.ok) throw new Error('Google TTS HTTP ' + r.status);
@@ -74,6 +86,23 @@ async function makeTTS(text, lang) {
   }
   return Buffer.concat(bufs);
 }
+
+// ── Store audio, return public URL for Twilio ─────────────────────────────────
+async function ttsUrl(text, lang) {
+  const buf = await makeTTS(text, lang);
+  const id  = uuidv4();
+  audioStore.set(id, { buf, ts: Date.now() });
+  return `${PUBLIC_URL}/audio/${id}`;
+}
+
+// ── Serve stored audio ────────────────────────────────────────────────────────
+app.get('/audio/:id', (req, res) => {
+  const entry = audioStore.get(req.params.id);
+  if (!entry) return res.status(404).send('Not found');
+  res.set('Content-Type', 'audio/mpeg');
+  res.set('Cache-Control', 'no-store');
+  res.send(entry.buf);
+});
 
 // ── Web chat: /api/tts ────────────────────────────────────────────────────────
 app.post('/api/tts', async (req, res) => {
@@ -101,101 +130,172 @@ app.post('/api/chat', async (req, res) => {
         'x-api-key':         ANTH_KEY,
         'anthropic-version': '2023-06-01'
       },
-      body: JSON.stringify({
-        model:      'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system,
-        messages
-      })
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system, messages })
     });
     res.json(await r.json());
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ── VAPI outbound call: /api/outbound-call ────────────────────────────────────
-// VAPI handles the entire phone call conversation:
-//   dial → greet in Odia (Azure or-IN-SunitaNeural) → listen → Claude reply → speak → loop
+// ── Claude reply helper ───────────────────────────────────────────────────────
+async function claudeReply(history, lang) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type':      'application/json',
+      'x-api-key':         ANTH_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model:      'claude-sonnet-4-20250514',
+      max_tokens: 200,
+      system:     lang === 'or' ? SYS_OR : SYS_EN,
+      messages:   history
+    })
+  });
+  const d = await r.json();
+  return d.content?.[0]?.text ||
+    (lang === 'or' ? 'ଦୁଃଖିତ, ଏକ ସମସ୍ୟା ହୋଇଛି।' : 'Sorry, small issue. Please try again.');
+}
+
+// ── TwiML builder ─────────────────────────────────────────────────────────────
+function buildTwiML(audioUrl, gatherAction, gatherLang, hangup = false) {
+  const VR = twilio.twiml.VoiceResponse;
+  const r  = new VR();
+  r.play(audioUrl);
+  if (hangup) {
+    r.pause({ length: 1 });
+    r.hangup();
+  } else {
+    const g = r.gather({
+      input:        'speech',
+      action:       gatherAction,
+      method:       'POST',
+      language:     gatherLang,
+      speechTimeout:'3',
+      timeout:      '8'
+    });
+    g.pause({ length: 1 });
+    r.redirect({ method: 'POST' }, gatherAction + '?noInput=1');
+  }
+  return r.toString();
+}
+
+// ── POST /api/outbound-call ───────────────────────────────────────────────────
 app.post('/api/outbound-call', async (req, res) => {
   const { phone, lang = 'or' } = req.body;
-
-  if (!phone) return res.status(400).json({ error: 'Phone number required' });
-  if (!phone.startsWith('+')) return res.status(400).json({ error: 'Use international format: +91xxxxxxxxxx' });
-
-  if (!VAPI_KEY)          return res.status(500).json({ error: 'VAPI_API_KEY not set in environment' });
-  if (!VAPI_ASSISTANT_ID) return res.status(500).json({ error: 'VAPI_ASSISTANT_ID not set in environment' });
-  if (!VAPI_PHONE_ID)     return res.status(500).json({ error: 'VAPI_PHONE_NUMBER_ID not set in environment' });
-
-  // Per-call system prompt and voice based on language
-  const assistantOverrides = lang === 'or' ? {
-    firstMessage: 'ନମସ୍କାର! ମୁଁ ଅର୍ଜୁନ, DRIEMS Polytechnic ରୁ ଫୋନ କରୁଛି। Electronics ଓ Telecommunication Diploma admission ବିଷୟରେ ଦୁଇ ମିନିଟ କଥା ହୋଇ ପାରିବ କି?',
-    model: {
-      provider: 'anthropic',
-      model:    'claude-sonnet-4-20250514',
-      systemPrompt: SYS_OR + '\n\nFONE CALL: ସ୍ୱଳ୍ପ ୧-୩ ବାକ୍ୟ ଉତ୍ତର ଦିଅନ୍ତୁ। ଫୋନ call ପରି ସ୍ୱାଭାବିକ ଭାବରେ।'
-    },
-    voice: {
-      provider: 'azure',
-      voiceId:  'or-IN-SunitaNeural'  // Native Odia Azure TTS voice
-    },
-    transcriber: {
-      provider: 'azure',
-      language: 'or-IN'
-    }
-  } : {
-    firstMessage: "Hello! This is Arjun from DRIEMS Polytechnic, Cuttack. I'm calling about our Electronics and Telecommunication Engineering diploma program. Do you have two minutes to chat?",
-    model: {
-      provider: 'anthropic',
-      model:    'claude-sonnet-4-20250514',
-      systemPrompt: SYS_EN + '\n\nPHONE CALL: Keep replies to 1-3 short sentences. Be natural like a real phone call.'
-    },
-    voice: {
-      provider: 'azure',
-      voiceId:  'en-IN-NeerjaNeural'  // Indian English female voice
-    },
-    transcriber: {
-      provider: 'deepgram',
-      model:    'nova-2',
-      language: 'en-IN'
-    }
-  };
+  if (!phone)           return res.status(400).json({ error: 'Phone number required' });
+  if (!phone.startsWith('+')) return res.status(400).json({ error: 'Use format: +91XXXXXXXXXX' });
+  if (!TW_SID || !TW_TOKEN || !TW_FROM)
+    return res.status(500).json({ error: 'Twilio credentials not set in Render environment variables' });
+  if (!PUBLIC_URL)
+    return res.status(500).json({ error: 'PUBLIC_URL not set in Render environment variables' });
 
   try {
-    const r = await fetch('https://api.vapi.ai/call', {
+    const client = twilio(TW_SID, TW_TOKEN);
+    const call   = await client.calls.create({
+      to:     phone,
+      from:   TW_FROM,
+      url:    `${PUBLIC_URL}/call/start?lang=${lang}`,
       method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + VAPI_KEY,
-        'Content-Type':  'application/json'
-      },
-      body: JSON.stringify({
-        assistantId:     VAPI_ASSISTANT_ID,
-        assistantOverrides,
-        phoneNumberId:   VAPI_PHONE_ID,
-        customer: { number: phone }
-      })
+      statusCallback:       `${PUBLIC_URL}/call/status`,
+      statusCallbackMethod: 'POST'
     });
-
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.message || data.error || 'VAPI error ' + r.status);
-
-    res.json({ success: true, callId: data.id, status: data.status });
+    res.json({ success: true, callSid: call.sid, status: call.status });
   } catch (e) {
-    console.error('VAPI call error:', e.message);
+    console.error('Outbound call error:', e.message);
     res.status(500).json({ error: e.message });
   }
 });
 
-// ── Poll call status: /api/call-status/:id ────────────────────────────────────
-app.get('/api/call-status/:id', async (req, res) => {
-  if (!VAPI_KEY) return res.status(500).json({ error: 'VAPI_API_KEY not set' });
+// ── POST /call/start — Twilio webhook when answered ──────────────────────────
+app.post('/call/start', async (req, res) => {
+  const lang    = req.query.lang || 'or';
+  const callSid = req.body.CallSid;
+  const greet   = GREET[lang] || GREET.or;
+
+  callStore.set(callSid, { history: [{ role: 'assistant', content: greet }], lang });
+
   try {
-    const r = await fetch('https://api.vapi.ai/call/' + req.params.id, {
-      headers: { 'Authorization': 'Bearer ' + VAPI_KEY }
-    });
-    const data = await r.json();
-    res.json({ status: data.status, duration: data.duration || 0 });
+    const url     = await ttsUrl(greet, lang);
+    const glang   = lang === 'or' ? 'or-IN' : 'en-IN';
+    const action  = `${PUBLIC_URL}/call/respond?lang=${lang}&sid=${callSid}`;
+    res.type('text/xml').send(buildTwiML(url, action, glang));
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    console.error('call/start error:', e.message);
+    const r = new twilio.twiml.VoiceResponse();
+    r.say({ language: 'or-IN' }, 'ଦୁଃଖିତ, ଏକ ସମସ୍ୟା ହୋଇଛି।');
+    r.hangup();
+    res.type('text/xml').send(r.toString());
   }
+});
+
+// ── POST /call/respond — Twilio sends speech here ────────────────────────────
+app.post('/call/respond', async (req, res) => {
+  const lang    = req.query.lang || 'or';
+  const callSid = req.query.sid  || req.body.CallSid;
+  const speech  = (req.body.SpeechResult || '').trim();
+  const noInput = req.query.noInput === '1';
+
+  let state = callStore.get(callSid) || { history: [], lang };
+  callStore.set(callSid, state);
+
+  const glang  = lang === 'or' ? 'or-IN' : 'en-IN';
+  const action = `${PUBLIC_URL}/call/respond?lang=${lang}&sid=${callSid}`;
+
+  try {
+    // No speech — prompt gently
+    if (!speech || noInput) {
+      const nudge = lang === 'or'
+        ? 'ଆପଣ ଶୁଣୁଛନ୍ତି କି? ଆଡ୍ମିଶନ ବିଷୟରେ କ\'ଣ ଜାଣିବାକୁ ଚାହୁଁଛନ୍ତି?'
+        : 'Are you there? Feel free to ask me anything about ETC admission.';
+      const url = await ttsUrl(nudge, lang);
+      return res.type('text/xml').send(buildTwiML(url, action, glang));
+    }
+
+    // Goodbye detection
+    if (BYE_WORDS.some(w => speech.toLowerCase().includes(w))) {
+      const farewell = lang === 'or'
+        ? 'ବହୁତ ଧନ୍ୟବାଦ! ଯଦି ଆଡ୍ମିଶନ ବିଷୟରେ ଜାଣିବାକୁ ଚାହୁଁଛନ୍ତି, 0671-2595062 ରେ ଫୋନ କରନ୍ତୁ। ଶୁଭ ହେଉ!'
+        : 'Thank you so much! If you want to know more, please call us at 0671-2595062. Have a great day!';
+      const url = await ttsUrl(farewell, lang);
+      return res.type('text/xml').send(buildTwiML(url, action, glang, true));
+    }
+
+    // Add user speech, get Claude reply
+    state.history.push({ role: 'user', content: speech });
+    const reply = await claudeReply(state.history, lang);
+    state.history.push({ role: 'assistant', content: reply });
+    if (state.history.length > 20) state.history = state.history.slice(-20);
+
+    const url = await ttsUrl(reply, lang);
+    res.type('text/xml').send(buildTwiML(url, action, glang));
+
+  } catch (e) {
+    console.error('call/respond error:', e.message);
+    const sorry = lang === 'or'
+      ? 'ଦୁଃଖିତ, ଏକ ଛୋଟ ସମସ୍ୟା। ଆଉ ଥରେ ଚେଷ୍ଟା କରନ୍ତୁ।'
+      : 'Sorry, small issue. Please try again.';
+    const url = await ttsUrl(sorry, lang);
+    res.type('text/xml').send(buildTwiML(url, action, glang));
+  }
+});
+
+// ── POST /call/status ─────────────────────────────────────────────────────────
+app.post('/call/status', (req, res) => {
+  const { CallSid, CallStatus } = req.body;
+  console.log(`Call ${CallSid}: ${CallStatus}`);
+  if (['completed','failed','busy','no-answer','canceled'].includes(CallStatus))
+    callStore.delete(CallSid);
+  res.sendStatus(200);
+});
+
+// ── GET /api/call-status/:sid ─────────────────────────────────────────────────
+app.get('/api/call-status/:sid', async (req, res) => {
+  try {
+    const client = twilio(TW_SID, TW_TOKEN);
+    const call   = await client.calls(req.params.sid).fetch();
+    res.json({ status: call.status, duration: call.duration || 0 });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 const PORT = process.env.PORT || 3000;
