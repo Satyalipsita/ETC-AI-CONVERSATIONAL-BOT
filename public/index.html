@@ -1,445 +1,766 @@
 <!DOCTYPE html>
-<html lang="or">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DRIEMS Polytechnic — ETC ଆଡ଼ ମ ି ଶ ନ ବ ଟ</title>
-  <style>
-    :root {
-      --primary: #1a237e;
-      --accent: #f57f17;
-      --bg: #f5f5f5;
-      --card: #ffffff;
-      --text: #212121;
-      --muted: #757575;
-      --success: #2e7d32;
-      --danger: #c62828;
-      --border: #e0e0e0;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DRIEMS Polytechnic — ETC Admission Bot</title>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Noto+Serif+Odia:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-deep:#030a12;--bg-panel:#070f1c;--bg-card:#0b1929;
+  --ap:#00d4ff;--as:#0066cc;--ag:#00ff99;--aa:#ffaa00;
+  --tb:#e8f4ff;--tm:#5a8aaa;--bs:rgba(0,212,255,0.12);--red:#ff3b5c;
+  --fm:'Exo 2',sans-serif;--fmo:'Share Tech Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--fm);background:var(--bg-deep);color:var(--tb);height:100vh;overflow:hidden;}
+.cbg{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.cbg svg{width:100%;height:100%;opacity:.05;}
+.scanline{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--ap),transparent);animation:scanD 4s linear infinite;pointer-events:none;z-index:1;opacity:.2;}
+@keyframes scanD{0%{top:0}100%{top:100vh}}
+.app{position:relative;z-index:2;display:grid;grid-template-columns:290px 1fr;height:100vh;}
 
-    /* Header */
-    .header {
-      background: var(--primary);
-      color: #fff;
-      padding: 1rem 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-    .header-logo {
-      width: 48px; height: 48px; border-radius: 50%;
-      background: var(--accent);
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 18px; color: #fff; flex-shrink: 0;
-    }
-    .header h1 { font-size: 18px; font-weight: 600; }
-    .header p { font-size: 12px; opacity: 0.8; }
+/* ─ LEFT PANEL ─ */
+.lp{background:var(--bg-panel);border-right:1px solid var(--bs);display:flex;flex-direction:column;overflow:hidden;}
+.bh{padding:16px;border-bottom:1px solid var(--bs);}
+.bl{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+.li{width:34px;height:34px;background:linear-gradient(135deg,var(--as),var(--ap));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;}
+.bt h1{font-size:11px;font-weight:600;color:var(--ap);letter-spacing:.05em;text-transform:uppercase;}
+.bt p{font-size:9px;color:var(--tm);}
+.db{display:inline-flex;align-items:center;gap:5px;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.3);border-radius:20px;padding:3px 11px;font-size:9px;font-weight:600;color:var(--ap);letter-spacing:.08em;text-transform:uppercase;}
+.db span{color:var(--ag);font-size:7px;}
+.istat{padding:12px 16px;border-bottom:1px solid var(--bs);}
+.it{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--tm);margin-bottom:7px;}
+.ig{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.ic{background:rgba(0,212,255,.04);border:1px solid var(--bs);border-radius:7px;padding:7px;text-align:center;}
+.ic .v{font-size:16px;font-weight:700;color:var(--ap);font-family:var(--fmo);display:block;line-height:1;margin-bottom:1px;}
+.ic .l{font-size:8px;color:var(--tm);}
+.hl{padding:12px 16px;flex:1;overflow-y:auto;border-bottom:1px solid var(--bs);}
+.hi{display:flex;align-items:flex-start;gap:7px;margin-bottom:8px;padding:7px;background:rgba(0,255,153,.03);border:1px solid rgba(0,255,153,.1);border-radius:7px;}
+.hii{width:22px;height:22px;border-radius:5px;background:rgba(0,255,153,.1);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;}
+.hit strong{display:block;font-size:10px;font-weight:600;color:#cceeff;margin-bottom:1px;}
+.hit span{font-size:9px;color:var(--tm);line-height:1.4;}
+.cf{padding:10px 16px;font-size:9px;color:var(--tm);line-height:1.8;}
+.cf a{color:var(--ap);text-decoration:none;}
 
-    /* Stats bar */
-    .stats {
-      background: var(--accent);
-      color: #fff;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0; justify-content: center;
-    }
-    .stat { padding: 6px 16px; text-align: center; font-size: 12px; border-right: 1px solid rgba(255,255,255,0.3); }
-    .stat:last-child { border-right: none; }
-    .stat strong { display: block; font-size: 15px; font-weight: 700; }
+/* ─ RIGHT PANEL ─ */
+.rp{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 
-    /* Main */
-    .main { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem; }
+/* Top bar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 22px;border-bottom:1px solid var(--bs);background:rgba(7,15,28,.9);flex-shrink:0;}
+.ci{display:flex;align-items:center;gap:10px;}
+.av{position:relative;width:40px;height:40px;}
+.avr{position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--ap);opacity:0;}
+.avr.pulse{animation:rp2 1.5s ease-out infinite;}
+@keyframes rp2{0%{transform:scale(.95);opacity:.8}100%{transform:scale(1.3);opacity:0}}
+.avc{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#0a2a50,#0d4080);border:2px solid var(--ap);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--ap);font-family:var(--fmo);}
+.cm h2{font-size:13px;font-weight:600;color:var(--tb);}
+.cm p{font-size:10px;color:var(--tm);display:flex;align-items:center;gap:5px;}
+.sd{width:6px;height:6px;border-radius:50%;background:#333;transition:background .3s;}
+.sd.active{background:var(--ag);animation:db3 1.2s ease-in-out infinite;}
+.sd.speaking{background:var(--ap);}
+.sd.listening{background:var(--aa);}
+@keyframes db3{0%,100%{opacity:1}50%{opacity:.3}}
+.ct{font-family:var(--fmo);font-size:12px;color:var(--ag);}
 
-    /* Card */
-    .card {
-      background: var(--card); border-radius: 12px;
-      border: 1px solid var(--border); margin-bottom: 1.5rem; overflow: hidden;
-    }
-    .card-header {
-      background: var(--primary); color: #fff;
-      padding: 0.75rem 1rem; font-size: 14px; font-weight: 600;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .card-body { padding: 1rem; }
+/* Tab nav */
+.tab-nav{display:flex;gap:0;border-bottom:1px solid var(--bs);flex-shrink:0;background:var(--bg-panel);}
+.tab-btn{padding:10px 22px;font-family:var(--fm);font-size:12px;font-weight:600;border:none;background:transparent;color:var(--tm);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;letter-spacing:.04em;}
+.tab-btn.active{color:var(--ap);border-bottom-color:var(--ap);}
+.tab-btn:hover:not(.active){color:var(--tb);}
 
-    /* Language toggle */
-    .lang-toggle {
-      display: flex; gap: 8px; margin-bottom: 1rem;
-    }
-    .lang-btn {
-      flex: 1; padding: 8px; border: 2px solid var(--border);
-      border-radius: 8px; background: #fff; cursor: pointer;
-      font-size: 13px; font-weight: 500; transition: all 0.2s;
-    }
-    .lang-btn.active {
-      border-color: var(--primary); background: var(--primary); color: #fff;
-    }
+/* Lang toggle */
+.lt{display:flex;background:var(--bg-card);border:1px solid rgba(0,212,255,.3);border-radius:20px;overflow:hidden;}
+.lb{padding:4px 12px;font-family:var(--fm);font-size:11px;font-weight:600;border:none;background:transparent;color:var(--tm);cursor:pointer;transition:all .2s;}
+.lb.active{background:var(--ap);color:#000;border-radius:18px;}
+.lb:hover:not(.active){color:var(--tb);}
 
-    /* Chat */
-    .chat-window {
-      height: 280px; overflow-y: auto; border: 1px solid var(--border);
-      border-radius: 8px; padding: 12px; margin-bottom: 10px;
-      background: #fafafa; display: flex; flex-direction: column; gap: 8px;
-    }
-    .msg { max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 14px; line-height: 1.5; }
-    .msg.bot { background: var(--primary); color: #fff; border-bottom-left-radius: 4px; align-self: flex-start; }
-    .msg.user { background: var(--accent); color: #fff; border-bottom-right-radius: 4px; align-self: flex-end; }
-    .chat-input-row { display: flex; gap: 8px; }
-    .chat-input-row input {
-      flex: 1; padding: 10px 12px; border: 1px solid var(--border);
-      border-radius: 8px; font-size: 14px; outline: none;
-    }
-    .chat-input-row input:focus { border-color: var(--primary); }
-    .btn {
-      padding: 10px 16px; border: none; border-radius: 8px;
-      font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
-    }
-    .btn:hover { opacity: 0.85; }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-accent { background: var(--accent); color: #fff; }
-    .btn-danger { background: var(--danger); color: #fff; }
-    .btn-success { background: var(--success); color: #fff; }
-    .btn-sm { padding: 7px 12px; font-size: 12px; }
+/* ─ TAB CONTENT ─ */
+.tab-pane{display:none;flex:1;flex-direction:column;overflow:hidden;}
+.tab-pane.active{display:flex;}
 
-    /* Voice call section */
-    .voice-controls {
-      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-    }
-    .status-dot {
-      width: 10px; height: 10px; border-radius: 50%;
-      background: #9e9e9e; flex-shrink: 0;
-    }
-    .status-dot.active { background: var(--success); animation: pulse 1s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+/* ── WEB CHAT tab ── */
+.idle{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:32px;}
+.orb{width:110px;height:110px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;}
+.orb-in{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#0a2a50,#0d4080);border:2px solid var(--ap);display:flex;align-items:center;justify-content:center;font-size:26px;z-index:2;}
+.orb-r{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(0,212,255,.3);animation:or3 2s ease-in-out infinite;}
+.orb-r:nth-child(2){animation-delay:.6s;}.orb-r:nth-child(3){animation-delay:1.2s;}
+@keyframes or3{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.8);opacity:0}}
+.idle-txt{text-align:center;}
+.idle-txt h2{font-size:18px;font-weight:600;color:var(--tb);margin-bottom:6px;}
+.idle-txt p{font-size:12px;color:var(--tm);line-height:1.6;max-width:320px;}
+.scb{padding:12px 32px;border-radius:40px;background:linear-gradient(135deg,#0a6e3f,#00c97a);border:none;color:#fff;font-family:var(--fm);font-size:13px;font-weight:600;cursor:pointer;transition:transform .18s,box-shadow .18s;box-shadow:0 5px 20px rgba(0,201,122,.35);display:flex;align-items:center;gap:7px;}
+.scb:hover{transform:scale(1.04);}
+.ta{flex:1;overflow-y:auto;padding:16px 22px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth;}
+.ta::-webkit-scrollbar{width:3px;}
+.ta::-webkit-scrollbar-thumb{background:var(--bs);border-radius:3px;}
+.mr{display:flex;gap:9px;max-width:78%;animation:mf2 .3s ease-out both;}
+@keyframes mf2{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.mr.bot{align-self:flex-start;}.mr.user{align-self:flex-end;flex-direction:row-reverse;}
+.ma{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:2px;}
+.mr.bot .ma{background:rgba(0,102,204,.3);border:1px solid var(--as);color:var(--ap);}
+.mr.user .ma{background:rgba(0,255,153,.1);border:1px solid rgba(0,255,153,.3);color:var(--ag);}
+.mb{padding:9px 13px;border-radius:12px;font-size:12.5px;line-height:1.6;}
+.mr.bot .mb{background:var(--bg-card);border:1px solid var(--bs);border-top-left-radius:3px;color:var(--tb);}
+.mr.user .mb{background:rgba(0,102,204,.2);border:1px solid rgba(0,150,255,.25);border-top-right-radius:3px;color:#cce8ff;}
+.mt{font-size:8px;color:var(--tm);margin-top:2px;font-family:var(--fmo);}
+.td-row{display:flex;align-items:center;gap:4px;padding:9px 13px;}
+.td-d{width:5px;height:5px;border-radius:50%;background:var(--tm);animation:tb3 1.2s ease-in-out infinite;}
+.td-d:nth-child(2){animation-delay:.2s;}.td-d:nth-child(3){animation-delay:.4s;}
+@keyframes tb3{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.ws{padding:9px 22px;border-top:1px solid var(--bs);border-bottom:1px solid var(--bs);background:rgba(7,15,28,.6);display:flex;align-items:center;gap:12px;min-height:46px;flex-shrink:0;}
+.wl{font-size:8px;letter-spacing:.1em;color:var(--tm);text-transform:uppercase;min-width:60px;}
+.wf{flex:1;height:30px;display:flex;align-items:center;gap:2px;}
+.wb{flex:1;border-radius:2px;background:var(--ap);opacity:.4;height:3px;}
+.wb.active{opacity:1;animation:wa2 var(--dur,.6s) ease-in-out infinite alternate;}
+@keyframes wa2{from{height:3px}to{height:var(--h,22px)}}
+.tts-ld{display:none;align-items:center;gap:5px;font-size:10px;color:var(--aa);}
+.tts-ld.show{display:flex;}
+.tts-d{width:4px;height:4px;border-radius:50%;background:var(--aa);animation:td3 1s ease-in-out infinite;}
+.tts-d:nth-child(2){animation-delay:.2s;}.tts-d:nth-child(3){animation-delay:.4s;}
+@keyframes td3{0%,100%{opacity:.3}50%{opacity:1}}
+.cz{padding:14px 22px 18px;background:rgba(7,15,28,.95);border-top:1px solid var(--bs);display:flex;flex-direction:column;gap:10px;flex-shrink:0;}
+.ir{display:flex;gap:7px;align-items:center;}
+.ti{flex:1;background:var(--bg-card);border:1px solid var(--bs);border-radius:28px;padding:9px 16px;color:var(--tb);font-family:var(--fm);font-size:12px;outline:none;transition:border-color .2s;}
+.ti:focus{border-color:var(--ap);}
+.ti::placeholder{color:var(--tm);}
+.sb{width:38px;height:38px;border-radius:50%;background:var(--as);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s,background .2s;color:#fff;}
+.sb:hover{background:var(--ap);transform:scale(1.05);}
+.cc{display:flex;align-items:center;justify-content:center;gap:10px;}
+.ctb{width:40px;height:40px;border-radius:50%;border:1px solid rgba(0,212,255,.3);background:rgba(0,212,255,.06);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .18s;color:var(--tb);}
+.ctb:hover{background:rgba(0,212,255,.15);}
+.ctb.muted{background:rgba(255,59,92,.1);border-color:rgba(255,59,92,.4);color:var(--red);}
+.cbw{position:relative;}
+.cbr{position:absolute;inset:-7px;border-radius:50%;border:2px solid var(--ap);opacity:0;animation:brp2 1.5s ease-out infinite;}
+@keyframes brp2{0%{transform:scale(.9);opacity:.7}100%{transform:scale(1.5);opacity:0}}
+.ecb{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;background:linear-gradient(135deg,#8a0020,var(--red));box-shadow:0 4px 18px rgba(255,59,92,.4);color:#fff;}
+.micb{width:52px;height:52px;border-radius:50%;border:2px solid rgba(0,212,255,.3);background:rgba(0,212,255,.06);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .18s;color:var(--tb);}
+.micb.recording{border-color:var(--aa);background:rgba(255,170,0,.12);color:var(--aa);animation:mp2 1s ease-in-out infinite alternate;}
+@keyframes mp2{from{box-shadow:0 0 0 0 rgba(255,170,0,.3)}to{box-shadow:0 0 0 10px rgba(255,170,0,0)}}
+.hb{text-align:center;font-size:9px;color:var(--tm);}
 
-    /* Outbound section */
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; color: var(--muted); }
-    .form-group input, .form-group select, .form-group textarea {
-      width: 100%; padding: 9px 12px; border: 1px solid var(--border);
-      border-radius: 8px; font-size: 14px; outline: none; background: #fff;
-    }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-      border-color: var(--primary);
-    }
-    .form-group textarea { min-height: 100px; resize: vertical; }
+/* ── OUTBOUND CALL tab ── */
+.oc-wrap{flex:1;overflow-y:auto;padding:20px 22px;display:flex;flex-direction:column;gap:16px;}
+.oc-card{background:var(--bg-panel);border:1px solid var(--bs);border-radius:12px;padding:18px 20px;}
+.oc-title{font-size:12px;font-weight:600;color:var(--ap);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.oc-title span{font-size:16px;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:10px;color:var(--tm);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px;}
+.field input,.field select{width:100%;background:var(--bg-card);border:1px solid var(--bs);border-radius:8px;padding:9px 13px;color:var(--tb);font-family:var(--fm);font-size:13px;outline:none;transition:border-color .2s;}
+.field input:focus,.field select:focus{border-color:var(--ap);}
+.field select option{background:var(--bg-deep);}
+.call-now-btn{width:100%;padding:12px;border-radius:10px;background:linear-gradient(135deg,#0a6e3f,#00c97a);border:none;color:#fff;font-family:var(--fm);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s,opacity .15s;box-shadow:0 4px 18px rgba(0,201,122,.3);}
+.call-now-btn:hover{transform:scale(1.02);}
+.call-now-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 
-    /* Call log */
-    .call-log {
-      max-height: 200px; overflow-y: auto;
-      border: 1px solid var(--border); border-radius: 8px; padding: 8px;
-      background: #fafafa; font-size: 12px;
-    }
-    .log-item { padding: 6px 8px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-    .log-item:last-child { border-bottom: none; }
-    .log-status { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
-    .log-status.queued, .log-status.initiated { background: #fff3e0; color: #e65100; }
-    .log-status.ringing { background: #e3f2fd; color: #1565c0; }
-    .log-status.in-progress { background: #e8f5e9; color: var(--success); }
-    .log-status.completed { background: #f3e5f5; color: #6a1b9a; }
-    .log-status.failed, .log-status.error { background: #ffebee; color: var(--danger); }
+/* Bulk call */
+.bulk-area{width:100%;background:var(--bg-card);border:1px solid var(--bs);border-radius:8px;padding:9px 13px;color:var(--tb);font-family:var(--fmo);font-size:12px;resize:vertical;min-height:80px;outline:none;}
+.bulk-area:focus{border-color:var(--ap);}
+.bulk-launch-btn{width:100%;padding:11px;border-radius:10px;background:linear-gradient(135deg,#33006e,#7733cc);border:none;color:#fff;font-family:var(--fm);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:transform .15s;margin-top:10px;}
+.bulk-launch-btn:hover{transform:scale(1.02);}
+.bulk-launch-btn:disabled{opacity:.5;cursor:not-allowed;}
 
-    /* Grid layout for desktop */
-    @media (min-width: 640px) {
-      .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    }
-    .tip { font-size: 11px; color: var(--muted); margin-top: 4px; }
-  </style>
+/* Call log */
+.call-log{display:flex;flex-direction:column;gap:8px;}
+.call-item{background:var(--bg-card);border:1px solid var(--bs);border-radius:8px;padding:10px 13px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.call-num{font-family:var(--fmo);font-size:12px;color:var(--tb);}
+.call-info{font-size:10px;color:var(--tm);}
+.call-badge{padding:3px 10px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:.04em;}
+.badge-calling{background:rgba(0,212,255,.15);color:var(--ap);border:1px solid rgba(0,212,255,.3);}
+.badge-ringing{background:rgba(255,170,0,.15);color:var(--aa);border:1px solid rgba(255,170,0,.3);}
+.badge-inprogress{background:rgba(0,255,153,.15);color:var(--ag);border:1px solid rgba(0,255,153,.3);}
+.badge-completed{background:rgba(90,138,170,.1);color:var(--tm);border:1px solid var(--bs);}
+.badge-failed,.badge-busy,.badge-noanswer{background:rgba(255,59,92,.1);color:var(--red);border:1px solid rgba(255,59,92,.3);}
+.no-calls{text-align:center;color:var(--tm);font-size:12px;padding:30px;opacity:.6;}
+
+/* Status bar */
+.status-bar{padding:8px 22px;background:rgba(7,15,28,.8);border-top:1px solid var(--bs);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;}
+.status-bar span{font-size:10px;color:var(--tm);}
+.status-bar .live{color:var(--ag);}
+
+@media(max-width:750px){.app{grid-template-columns:1fr;}.lp{display:none;}}
+*{scrollbar-width:thin;scrollbar-color:var(--bs) transparent;}
+</style>
 </head>
 <body>
-
-<div class="header">
-  <div class="header-logo">DP</div>
-  <div>
-    <h1>DRIEMS Polytechnic — ETC ଶ ାଖ ା</h1>
-    <p>Autonomous · Tangi, Cuttack, Odisha · ଅ ର୍ ଜ ୁ ନ AI ବ ଟ</p>
-  </div>
+<div class="cbg">
+<svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#00d4ff" stroke-width="0.8">
+<line x1="0" y1="80" x2="300" y2="80"/><circle cx="300" cy="80" r="4" fill="#00d4ff"/>
+<line x1="300" y1="80" x2="300" y2="200"/><line x1="300" y1="200" x2="600" y2="200"/>
+<circle cx="600" cy="200" r="4" fill="#00d4ff"/><line x1="600" y1="200" x2="600" y2="120"/><line x1="600" y1="120" x2="900" y2="120"/>
+<line x1="0" y1="300" x2="150" y2="300"/><circle cx="150" cy="300" r="4" fill="#00d4ff"/>
+<line x1="150" y1="300" x2="150" y2="450"/><line x1="150" y1="450" x2="400" y2="450"/>
+<line x1="400" y1="450" x2="400" y2="350"/><line x1="400" y1="350" x2="750" y2="350"/>
+<line x1="750" y1="350" x2="750" y2="500"/><line x1="750" y1="500" x2="1200" y2="500"/>
+<rect x="880" y="100" width="80" height="60" rx="3"/>
+<line x1="880" y1="115" x2="860" y2="115"/><line x1="880" y1="130" x2="860" y2="130"/>
+<line x1="960" y1="115" x2="980" y2="115"/><line x1="960" y1="130" x2="980" y2="130"/>
+</svg>
 </div>
+<div class="scanline"></div>
 
-<div class="stats">
-  <div class="stat"><strong>60</strong>ଆ ସ ନ</div>
-  <div class="stat"><strong>3 ବ ର୍ ଷ</strong>ଡ ି ପ ୍ ଲ ୋ ମ ା</div>
-  <div class="stat"><strong>100%</strong>ପ ୍ ଲ େ ସ ୍ ମ େ ଣ ୍ ଟ</div>
-  <div class="stat"><strong>#2</strong>QCI ର ୍ ୟ ାଙ ୍ କ</div>
-  <div class="stat"><strong>AICTE</strong>Autonomous 2026</div>
-</div>
-
-<div class="main">
-
-  <!-- Language selector -->
-  <div class="lang-toggle">
-    <button class="lang-btn active" id="btn-or" onclick="setLang('or')">🔵 ଓ ଡ଼ ି ଆ (Odia)</button>
-    <button class="lang-btn" id="btn-hi" onclick="setLang('hi')">🟠 ह ि ं द ी (Hindi)</button>
+<div class="app">
+<!-- LEFT PANEL -->
+<aside class="lp">
+  <div class="bh">
+    <div class="bl">
+      <div class="li">DP</div>
+      <div class="bt"><h1>DRIEMS Polytechnic</h1><p>Autonomous · Tangi, Cuttack, Odisha</p></div>
+    </div>
+    <div class="db"><span>●</span> Electronics &amp; Telecommunication Engg.</div>
   </div>
+  <div class="istat">
+    <div class="it">ETC Branch Stats</div>
+    <div class="ig">
+      <div class="ic"><span class="v">60</span><span class="l">Seats</span></div>
+      <div class="ic"><span class="v">3yr</span><span class="l">Diploma</span></div>
+      <div class="ic"><span class="v">100%</span><span class="l">Placement</span></div>
+      <div class="ic"><span class="v">#2</span><span class="l">QCI Rank</span></div>
+    </div>
+  </div>
+  <div class="hl">
+    <div class="it">Key Highlights</div>
+    <div class="hi"><div class="hii">🔲</div><div class="hit"><strong>VLSI Design</strong><span>IC design, FPGA, digital circuits</span></div></div>
+    <div class="hi"><div class="hii">💻</div><div class="hit"><strong>Computer Integration</strong><span>Embedded C, Python, IoT</span></div></div>
+    <div class="hi"><div class="hii">📡</div><div class="hit"><strong>Telecom Systems</strong><span>5G, fiber optics, satellite, RF</span></div></div>
+    <div class="hi"><div class="hii">🏭</div><div class="hit"><strong>100% Placement</strong><span>TCS, Infosys, L&T, BHEL, BSNL</span></div></div>
+    <div class="hi"><div class="hii">🏛️</div><div class="hit"><strong>AICTE Autonomous 2026</strong><span>First private polytechnic in Odisha</span></div></div>
+    <div class="hi"><div class="hii">🔬</div><div class="hit"><strong>IIT Bombay Virtual Lab</strong><span>Remote labs + Pre-Incubation Centre</span></div></div>
+  </div>
+  <div class="cf">
+    📞 <a href="tel:06712595062">0671-2595062</a> / 9438065742<br>
+    ✉️ <a href="/cdn-cgi/l/email-protection#5733253e323a24333e273b383a361733253e323a24793634793e39"><span class="__cf_email__" data-cfemail="b4d0c6ddd1d9c7d0ddc4d8dbd9d5f4d0c6ddd1d9c79ad5d79addda">[email&#160;protected]</span></a><br>
+    🌐 <a href="https://www.driemspolytechnic.org" target="_blank">driemspolytechnic.org</a>
+  </div>
+</aside>
 
-  <div class="grid-2">
-
-    <!-- Web Chat -->
-    <div class="card">
-      <div class="card-header">💬 <span id="chat-title">ଆ ର ୍ ଜ ୁ ନ ସ ା ଥ ି ଚ ା ଟ</span></div>
-      <div class="card-body">
-        <div class="chat-window" id="chat-window">
-          <div class="msg bot" id="welcome-msg">ନ ମ ସ ୍ କ ା ର! ମ ୁ ଁ ଅ ର ୍ ଜ ୁ ନ। DRIEMS ETC ଆ ଡ ଼ ମ ି ଶ ନ ବ ି ଷ ୟ ର େ ଯ ା ହ ା ପ ଚ ା ର ି ବ ା ଚ ା ହ ୁ ଁ ଛ ନ ୍ ତ ି ପ ଚ ା ର ନ ୍ ତ ୁ।</div>
-        </div>
-        <div class="chat-input-row">
-          <input type="text" id="chat-input" placeholder="ଟ ା ଇ ପ କ ର ନ ୍ ତ ୁ..." onkeydown="if(event.key==='Enter')sendChat()" />
-          <button class="btn btn-primary" onclick="sendChat()">▶</button>
-        </div>
+<!-- RIGHT PANEL -->
+<div class="rp">
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="ci">
+      <div class="av">
+        <div class="avr" id="avRing"></div>
+        <div class="avc">A</div>
+      </div>
+      <div class="cm">
+        <h2>Arjun — ETC Admission Bot</h2>
+        <p><span class="sd" id="sDot"></span><span id="sTxt">Ready</span></p>
       </div>
     </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="ct" id="cTimer" style="display:none">00:00</div>
+      <div class="lt">
+        <button class="lb active" id="btnEN" onclick="setLang('en')">EN</button>
+        <button class="lb" id="btnOR" onclick="setLang('or')" style="font-family:'Noto Serif Odia',sans-serif;">ଓଡ଼ିଆ</button>
+      </div>
+    </div>
+  </div>
 
-    <!-- Outbound Single Call -->
-    <div class="card">
-      <div class="card-header">📞 <span id="call-title">ଆ ଉ ଟ ବ ାଉ ଣ ୍ ଡ କ ଲ</span></div>
-      <div class="card-body">
-        <div class="form-group">
-          <label id="label-phone">ଫ ୋ ନ ନ ମ ୍ ବ ର (country code ସ ହ)</label>
-          <input type="tel" id="phone-number" placeholder="+919876543210" />
-          <p class="tip" id="tip-phone">ଉ ଦ ା ହ ର ଣ: +919876543210 (India)</p>
-        </div>
-        <button class="btn btn-accent" style="width:100%" onclick="makeCall()" id="call-btn">
-          📞 <span id="call-btn-text">ଏ ବ େ ଡ ା କ ର ନ ୍ ତ ୁ</span>
+  <!-- TAB NAV -->
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('chat')">💬 Web Chat</button>
+    <button class="tab-btn" onclick="switchTab('outbound')">📲 Outbound Call</button>
+  </div>
+
+  <!-- ══ TAB 1: WEB CHAT ══ -->
+  <div class="tab-pane active" id="tab-chat">
+    <!-- Idle screen -->
+    <div class="idle" id="idleScreen">
+      <div class="orb">
+        <div class="orb-r"></div><div class="orb-r"></div><div class="orb-r"></div>
+        <div class="orb-in">📞</div>
+      </div>
+      <div class="idle-txt">
+        <h2 id="idleTitle">Talk to our ETC Counsellor</h2>
+        <p id="idleDesc">Meet Arjun, your AI admission advisor for Electronics &amp; Telecommunication Engineering at DRIEMS Polytechnic. Ask anything about admission, VLSI, placements or fees.</p>
+      </div>
+      <button class="scb" id="startBtn">
+        <span>📞</span><span id="startBtnTxt">Start Voice Call</span>
+      </button>
+    </div>
+    <!-- Chat transcript -->
+    <div class="ta" id="txArea" style="display:none"></div>
+    <!-- Waveform -->
+    <div class="ws" id="waveSection" style="display:none">
+      <span class="wl" id="waveLabel">READY</span>
+      <div class="wf" id="waveform"></div>
+      <div class="tts-ld" id="ttsLoading">
+        <div class="tts-d"></div><div class="tts-d"></div><div class="tts-d"></div>
+        <span style="font-size:9px">Loading voice…</span>
+      </div>
+    </div>
+    <!-- Chat controls -->
+    <div class="cz" id="ctrlZone" style="display:none">
+      <div class="ir">
+        <input type="text" class="ti" id="txtInput" placeholder="Type your question or press 🎙️ to speak…">
+        <button class="sb" id="sendBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
-        <div id="call-status" style="margin-top:10px;font-size:13px;"></div>
       </div>
+      <div class="cc">
+        <button class="ctb" id="muteBtn">🔊</button>
+        <div class="cbw">
+          <div class="cbr"></div>
+          <button class="ecb" id="endBtn">📵</button>
+        </div>
+        <button class="micb" id="micBtn">🎙️</button>
+      </div>
+      <div class="hb" id="hintBar">Click 🎙️ to speak · Type and send · Click 📵 to end call</div>
     </div>
-
   </div>
 
-  <!-- Bulk Call -->
-  <div class="card">
-    <div class="card-header">📋 <span id="bulk-title">ଏ କ ସ ାଥ ି ଅ ନ େ କ ଡ ା କ</span></div>
-    <div class="card-body">
-      <div class="form-group">
-        <label id="label-bulk">ସ ବ ୁ ନ ମ ୍ ବ ର (ଏ କ ଲ ା ଇ ନ ରେ ଗ ୋ ଟ ିଏ)</label>
-        <textarea id="bulk-numbers" placeholder="+919876543210&#10;+919123456789&#10;+919000000000"></textarea>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="makeBulkCalls()" id="bulk-btn">
-          🚀 <span id="bulk-btn-text">ସ ବ ୁ ଡ ା କ ଶ ୁ ର ୁ</span>
-        </button>
-        <button class="btn btn-sm" style="background:#eee" onclick="clearLog()">ଲ ଗ ସ ଫ</button>
-      </div>
-      <p class="tip" id="tip-bulk" style="margin-top:6px;">⚠️ ପ ୍ ର ତ ି ଟ ି ଡ ା କ ମ ଧ ୍ ୟ ରେ 5 ସ େ କ େ ଣ ୍ ଡ ବ ିର ତ ି ।</p>
+  <!-- ══ TAB 2: OUTBOUND CALL ══ -->
+  <div class="tab-pane" id="tab-outbound">
+    <div class="oc-wrap">
 
-      <div style="margin-top:12px;">
-        <div class="card-header" style="border-radius:8px 8px 0 0;font-size:13px;">📜 <span id="log-title">ଡ ା କ ଲ ଗ</span></div>
-        <div class="call-log" id="call-log">
-          <div class="log-item" style="color:var(--muted)">
-            <span id="no-calls-text">ଏ ପ ର ି ଆ ଡ ଼ ାଣ ୍ ଟ ା ୨ ନ ା ।</span>
-          </div>
+      <!-- Single call card -->
+      <div class="oc-card">
+        <div class="oc-title"><span>📲</span> Make a Single Outbound Call</div>
+        <div class="field">
+          <label>Phone Number (with country code)</label>
+          <input type="tel" id="ocPhone" placeholder="+919876543210" maxlength="15">
+        </div>
+        <div class="field">
+          <label>Call Language</label>
+          <select id="ocLang">
+            <option value="or">ଓଡ଼ିଆ (Odia) — Recommended</option>
+            <option value="en">English (Indian accent)</option>
+          </select>
+        </div>
+        <button class="call-now-btn" id="callNowBtn" onclick="makeCall()">
+          <span>📞</span> Call Now
+        </button>
+        <div id="singleStatus" style="margin-top:10px;font-size:11px;color:var(--tm);display:none;"></div>
+      </div>
+
+      <!-- Bulk call card -->
+      <div class="oc-card">
+        <div class="oc-title"><span>📋</span> Bulk Call — Multiple Numbers</div>
+        <div class="field">
+          <label>Enter numbers — one per line (with country code)</label>
+          <textarea class="bulk-area" id="bulkNumbers" placeholder="+919876543210&#10;+917894561230&#10;+916789012345"></textarea>
+        </div>
+        <div class="field">
+          <label>Language for all calls</label>
+          <select id="bulkLang">
+            <option value="or">ଓଡ଼ିଆ (Odia) — Recommended</option>
+            <option value="en">English (Indian accent)</option>
+          </select>
+        </div>
+        <div style="font-size:10px;color:var(--aa);margin-bottom:8px;">⚠️ Calls are made one at a time with a 5-second gap. Do not close this page.</div>
+        <button class="bulk-launch-btn" id="bulkBtn" onclick="startBulk()">
+          <span>🚀</span> <span id="bulkBtnTxt">Launch Bulk Calls</span>
+        </button>
+      </div>
+
+      <!-- Call log card -->
+      <div class="oc-card">
+        <div class="oc-title" style="justify-content:space-between;">
+          <span style="display:flex;align-items:center;gap:8px;"><span>📜</span> Call Log</span>
+          <button onclick="clearLog()" style="font-size:10px;padding:3px 10px;border-radius:6px;border:1px solid var(--bs);background:transparent;color:var(--tm);cursor:pointer;">Clear</button>
+        </div>
+        <div class="call-log" id="callLog">
+          <div class="no-calls">No calls made yet. Use the forms above to start calling.</div>
         </div>
       </div>
+
+    </div>
+    <!-- Status bar -->
+    <div class="status-bar">
+      <span id="ocStatusBar">Twilio outbound calling ready</span>
+      <span class="live" id="activeCalls" style="display:none">● <span id="activeCount">0</span> call(s) active</span>
     </div>
   </div>
 
-  <!-- Info cards -->
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-header">ℹ️ Twilio ସ େ ଟ ଅ ପ</div>
-      <div class="card-body" style="font-size:13px;line-height:1.8;">
-        <p>1. Twilio Console → Phone Numbers → Voice</p>
-        <p>2. <strong>Webhook URL:</strong> <code id="webhook-url">https://etc-ai-conversational-bot.onrender.com/outbound-voice</code></p>
-        <p>3. <strong>Status Callback:</strong> <code>https://etc-ai-conversational-bot.onrender.com/status</code></p>
-        <p>4. Method: <strong>HTTP POST</strong></p>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-header">📡 UptimeRobot ସ େ ଟ ଅ ପ</div>
-      <div class="card-body" style="font-size:13px;line-height:1.8;">
-        <p>URL: <code>https://etc-ai-conversational-bot.onrender.com/ping</code></p>
-        <p>Interval: <strong>5 minutes</strong></p>
-        <p>Type: <strong>HTTP(s)</strong></p>
-        <p>Expected status: <strong>200</strong></p>
-      </div>
-    </div>
-  </div>
+</div><!-- end rp -->
+</div><!-- end app -->
 
-</div>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ══════════════════════════════════════════════════════
+//  DRIEMS ETC BOT  —  Web Chat + Outbound Calling
+//  TTS: Server-side Google TTS
+//  Outbound: Twilio API via server
+// ══════════════════════════════════════════════════════
 
-<script>
-  let currentLang = 'or';
-  const sessionId = 'web-' + Date.now();
+// ── System prompts ────────────────────────────────────
+const SYS_EN=`You are Arjun, a friendly enthusiastic admission counsellor at DRIEMS Polytechnic (Autonomous), Tangi, Cuttack, Odisha. Speak naturally and warmly like a real person. Expert in Electronics & Telecommunication Engineering (ETC) branch.
 
-  const strings = {
-    or: {
-      chatTitle: 'ଅ ର ୍ ଜ ୁ ନ ସ ା ଥ ି ଚ ା ଟ',
-      callTitle: 'ଆ ଉ ଟ ବ ାଉ ଣ ୍ ଡ କ ଲ',
-      bulkTitle: 'ଏ କ ସ ାଥ ି ଅ ନ େ କ ଡ ା କ',
-      welcome: 'ନ ମ ସ ୍ କ ା ର! ମ ୁ ଁ ଅ ର ୍ ଜ ୁ ନ। DRIEMS ETC ଆ ଡ ଼ ମ ି ଶ ନ ବ ି ଷ ୟ ର େ ଯ ା ହ ା ପ ଚ ା ର ି ବ ା ଚ ା ହ ୁ ଁ ଛ ନ ୍ ତ ି ପ ଚ ା ର ନ ୍ ତ ୁ।',
-      placeholder: 'ଟ ା ଇ ପ କ ର ନ ୍ ତ ୁ...',
-      labelPhone: 'ଫ ୋ ନ ନ ମ ୍ ବ ର (country code ସ ହ)',
-      tipPhone: 'ଉ ଦ ା ହ ର ଣ: +919876543210 (India)',
-      callBtnText: 'ଏ ବ େ ଡ ା କ ର ନ ୍ ତ ୁ',
-      labelBulk: 'ସ ବ ୁ ନ ମ ୍ ବ ର (ଏ କ ଲ ା ଇ ନ ରେ ଗ ୋ ଟ ିଏ)',
-      bulkBtnText: 'ସ ବ ୁ ଡ ା କ ଶ ୁ ର ୁ',
-      tipBulk: '⚠️ ପ ୍ ର ତ ି ଟ ି ଡ ା କ ମ ଧ ୍ ୟ ରେ 5 ସ େ କ େ ଣ ୍ ଡ ବ ିର ତ ି ।',
-      logTitle: 'ଡ ା କ ଲ ଗ',
-      noCalls: 'ଏ ପ ର ି ଆ ଡ ଼ ାଣ ୍ ଟ ା ୨ ନ ା ।',
-      calling: 'ଡ ା କ ହ ଉ ଛ ି...',
-      success: 'ଡ ା କ ଶ ୁ ର ୁ ହ େ ଲ ା! SID: ',
-      error: 'ଭ ୁ ଲ: ',
-    },
-    hi: {
-      chatTitle: 'अर्जुन से चैट करें',
-      callTitle: 'आउटबाउंड कॉल',
-      bulkTitle: 'बल्क कॉल',
-      welcome: 'नमस्ते! मैं अर्जुन हूँ। DRIEMS ETC एडमिशन के बारे में कुछ पूछना है?',
-      placeholder: 'टाइप करें...',
-      labelPhone: 'फोन नंबर (country code के साथ)',
-      tipPhone: 'उदाहरण: +919876543210 (India)',
-      callBtnText: 'अभी कॉल करें',
-      labelBulk: 'सभी नंबर (एक लाइन में एक)',
-      bulkBtnText: 'सभी कॉल शुरू करें',
-      tipBulk: '⚠️ हर कॉल के बीच 5 सेकंड का अंतर।',
-      logTitle: 'कॉल लॉग',
-      noCalls: 'अभी कोई कॉल नहीं।',
-      calling: 'कॉल हो रही है...',
-      success: 'कॉल शुरू! SID: ',
-      error: 'गलती: ',
-    }
+PERSONALITY: Warm, encouraging. "Great question!", "Absolutely!", "Let me tell you...". Short clear sentences. No bullet points. Ask questions to engage.
+
+DRIEMS FACTS: Established 2003. Contact: 0671-2595062, driemsdiploma@driems.ac.in. AICTE Autonomous (first private poly in Odisha, 2026). QCI #2 in Odisha. 570 total students.
+Courses: Mechanical(210 NBA), Computer(120 NBA), Electrical(120 NBA), Civil(60), ETC(60).
+ETC: 3yr Diploma, 60 seats, VLSI Design, Embedded Systems, IoT, 5G, Fiber Optics, Embedded C, Python, 100% placement — TCS/Infosys/Wipro/L&T/BHEL/BSNL. IIT Bombay Virtual Lab. Admission via OJEE, 10th pass Science+Maths.
+WHY ETC: 60 seats=personal attention. VLSI chip design booming. Dual electronics+computer skills. Autonomous cutting-edge curriculum. Near Cuttack-Bhubaneswar.
+
+INSTRUCTIONS: 2-4 sentences per reply. Enthusiastically highlight ETC. No markdown. End with question sometimes. Unknown questions→website or 0671-2595062.`;
+
+const SYS_OR=`ଆପଣ ଅର୍ଜୁନ, DRIEMS Polytechnic (Autonomous), ତଙ୍ଗି, କଟକ, ଓଡ଼ିଶା ର ଉତ୍ସାହୀ admission counsellor। ଓଡ଼ିଆ ଭାଷାରେ ସ୍ୱାଭାବିକ ଓ ଉଷ୍ଣ ଭାବରେ କଥା ହୁଅନ୍ତୁ।
+
+ବ୍ୟକ୍ତିତ୍ୱ: "ବହୁତ ଭଲ ପ୍ରଶ୍ନ!", "ହଁ!", "ଦେଖନ୍ତୁ..." ଭଳି phrases। ସ୍ୱଳ୍ପ ସ୍ପଷ୍ଟ ବାକ୍ୟ। Bullet points ନୁହେଁ।
+
+DRIEMS ତଥ୍ୟ: ପ୍ରତିଷ୍ଠା ୨୦୦୩। ଫୋନ: 0671-2595062। AICTE Autonomous (ଓଡ଼ିଶାରେ ପ୍ରଥମ, 2026)। QCI #2। ୫୭୦ ଛାତ୍ର।
+ETC Branch: ୩ ବର୍ଷ Diploma, ୬୦ ଆସନ, VLSI, Embedded Systems, IoT, 5G, Python, C। ୧୦୦% placement — TCS/Infosys/L&T/BHEL। OJEE ମାଧ୍ୟମରେ admission, ୧୦ ମ pass।
+
+ନିର୍ଦ୍ଦେଶ: ୨-୪ ବାକ୍ୟ। ETC ର ଶକ୍ତି ଦେଖାନ୍ତୁ। Markdown ନୁହେଁ। ଅଜଣା ପ୍ରଶ୍ନ→ 0671-2595062।`;
+
+// ── Language config ───────────────────────────────────
+const LANG={
+  en:{code:'en-IN',sys:SYS_EN,
+    greeting:"Hello! This is Arjun from DRIEMS Polytechnic. Welcome! I'm your ETC admission advisor. We have an amazing 3-year diploma in Electronics and Telecommunication with 100% placement and VLSI curriculum. How can I help you today?",
+    placeholder:"Type your question or press 🎙️ to speak…",
+    hint:"Click 🎙️ to speak · Type and send · Click 📵 to end",
+    statusReady:"Ready",statusConn:"🟢 Connected",statusThink:"⚙️ Thinking…",
+    statusListen:"🎙️ Listening…",statusSpeak:"🔈 Arjun speaking…",
+    startBtn:"Start Voice Call",idleTitle:"Talk to our ETC Counsellor",
+    idleDesc:"Meet Arjun, your AI admission advisor for Electronics & Telecommunication Engineering at DRIEMS Polytechnic.",
+    waveBot:"BOT SPEAKING",waveUser:"YOU SPEAKING",waveReady:"READY",waveLoad:"LOADING…"},
+  or:{code:'or-IN',sys:SYS_OR,
+    greeting:"ନମସ୍କାର! ମୁଁ ଅର୍ଜୁନ, DRIEMS Polytechnic ରୁ। ଆପଣଙ୍କୁ ସ୍ୱାଗତ! ଆମ Electronics ଓ Telecommunication Diploma ରେ ୩ ବର୍ଷ, ୧୦୦% placement ଏବଂ VLSI design ଅଛି। ଆଡ୍ମିଶନ ବିଷୟରେ ଆପଣ କ'ଣ ଜାଣିବାକୁ ଚାହୁଁଛନ୍ତି?",
+    placeholder:"ଆପଣଙ୍କ ପ୍ରଶ୍ନ ଟାଇପ କରନ୍ତୁ ବା 🎙️ ଦବାନ୍ତୁ…",
+    hint:"🎙️ ଦବାଇ ବୋଲନ୍ତୁ · ଟାଇପ ଓ Send ଦବାନ୍ତୁ · 📵 ଦବାଇ ଶେଷ",
+    statusReady:"ପ୍ରସ୍ତୁତ",statusConn:"🟢 ସଂଯୁକ୍ତ",statusThink:"⚙️ ଭାବୁଛି…",
+    statusListen:"🎙️ ଶୁଣୁଛି…",statusSpeak:"🔈 ଅର୍ଜୁନ ବୋଲୁଛି…",
+    startBtn:"ଭଏସ୍ ଖୋଲନ୍ତୁ",idleTitle:"ETC Counsellor ସାଥିରେ କଥା ହୁଅନ୍ତୁ",
+    idleDesc:"ଅର୍ଜୁନ ଆପଣଙ୍କ ପ୍ରଶ୍ନ ଶୁଣିବାକୁ ପ୍ରସ୍ତୁତ। DRIEMS ETC branch ବିଷୟରେ ଯେ କୌଣସି ପ୍ରଶ୍ନ ପଚାରନ୍ତୁ।",
+    waveBot:"BOT ବୋଲୁଛି",waveUser:"ଆପଣ ବୋଲୁଛନ୍ତି",waveReady:"ପ୍ରସ୍ତୁତ",waveLoad:"ଲୋଡ…"}
+};
+
+// ── Web chat state ────────────────────────────────────
+let lang='en',callActive=false,callStart=null,timerInt=null;
+let history=[],isMuted=false,isRec=false,recognition=null,currentAudio=null;
+
+// ── Outbound state ────────────────────────────────────
+let callLog=[];
+let bulkRunning=false;
+let activeCallCount=0;
+
+// ── DOM ───────────────────────────────────────────────
+const $=id=>document.getElementById(id);
+const idleScreen=$('idleScreen'),txArea=$('txArea'),waveSection=$('waveSection');
+const ctrlZone=$('ctrlZone'),startBtn=$('startBtn'),endBtn=$('endBtn');
+const muteBtn=$('muteBtn'),micBtn=$('micBtn'),sendBtn=$('sendBtn');
+const txtInput=$('txtInput'),waveform=$('waveform'),waveLabel=$('waveLabel');
+const ttsLoading=$('ttsLoading'),sDot=$('sDot'),sTxt=$('sTxt');
+const avRing=$('avRing'),cTimer=$('cTimer');
+
+// ── Build waveform ────────────────────────────────────
+(function(){for(let i=0;i<40;i++){
+  const b=document.createElement('div');b.className='wb';
+  const h=Math.floor(4+Math.random()*22),d=(0.3+Math.random()*0.5).toFixed(2);
+  b.style.setProperty('--h',h+'px');b.style.setProperty('--dur',d+'s');
+  b.style.animationDelay=(Math.random()*0.5)+'s';waveform.appendChild(b);
+}})();
+
+// ── Tab switching ─────────────────────────────────────
+function switchTab(tab){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  $('tab-'+tab).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── Language ──────────────────────────────────────────
+function setLang(l){
+  lang=l;
+  $('btnEN').classList.toggle('active',l==='en');
+  $('btnOR').classList.toggle('active',l==='or');
+  const L=LANG[l];
+  txtInput.placeholder=L.placeholder;
+  $('hintBar').textContent=L.hint;
+  $('idleTitle').textContent=L.idleTitle;
+  $('idleDesc').textContent=L.idleDesc;
+  $('startBtnTxt').textContent=L.startBtn;
+  setStatus('',L.statusReady);
+}
+
+// ── Status ────────────────────────────────────────────
+function setStatus(state,txt){sDot.className='sd '+state;sTxt.textContent=txt;}
+function setBotSpeaking(on){
+  const L=LANG[lang];
+  if(on){
+    avRing.classList.add('pulse');setStatus('speaking',L.statusSpeak);
+    waveform.querySelectorAll('.wb').forEach(b=>{b.classList.add('active');b.style.background='#00d4ff';});
+    waveLabel.textContent=L.waveBot;ttsLoading.classList.remove('show');
+  }else{
+    avRing.classList.remove('pulse');setStatus('active',L.statusConn);
+    waveform.querySelectorAll('.wb').forEach(b=>{b.classList.remove('active');b.style.background='#5a8aaa';});
+    waveLabel.textContent=L.waveReady;ttsLoading.classList.remove('show');
+  }
+}
+function showTTSLoad(){
+  waveLabel.textContent=LANG[lang].waveLoad;
+  ttsLoading.classList.add('show');
+  waveform.querySelectorAll('.wb').forEach(b=>b.classList.remove('active'));
+}
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+
+// ── Chat messages ─────────────────────────────────────
+function addMsg(role,text){
+  const row=document.createElement('div');row.className='mr '+role;
+  const av=document.createElement('div');av.className='ma';av.textContent=role==='bot'?'A':'U';
+  const wrap=document.createElement('div');
+  const bub=document.createElement('div');bub.className='mb';bub.textContent=text;
+  const ts=document.createElement('div');ts.className='mt';
+  ts.textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  wrap.appendChild(bub);wrap.appendChild(ts);row.appendChild(av);row.appendChild(wrap);
+  txArea.appendChild(row);txArea.scrollTop=txArea.scrollHeight;
+}
+function showTyping(){
+  const row=document.createElement('div');row.className='mr bot';row.id='typRow';
+  const av=document.createElement('div');av.className='ma';av.textContent='A';
+  const bub=document.createElement('div');bub.className='mb td-row';
+  for(let i=0;i<3;i++){const d=document.createElement('div');d.className='td-d';bub.appendChild(d);}
+  row.appendChild(av);row.appendChild(bub);txArea.appendChild(row);txArea.scrollTop=txArea.scrollHeight;
+}
+function removeTyping(){const r=$('typRow');if(r)r.remove();}
+
+// ── TTS (server) ──────────────────────────────────────
+function speak(text,onEnd){
+  if(currentAudio){currentAudio.pause();currentAudio.src='';currentAudio=null;}
+  if(!text||!text.trim()){if(onEnd)onEnd();return;}
+  if(isMuted){if(onEnd)onEnd();return;}
+  const clean=text.replace(/[*_`#]/g,'').replace(/\n+/g,' ').trim();
+  showTTSLoad();
+  fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({text:clean,lang})})
+  .then(r=>{if(!r.ok)throw new Error('TTS '+r.status);return r.blob();})
+  .then(blob=>{
+    const url=URL.createObjectURL(blob);
+    const audio=new Audio(url);currentAudio=audio;
+    setBotSpeaking(true);
+    audio.onended=()=>{URL.revokeObjectURL(url);currentAudio=null;setBotSpeaking(false);if(onEnd)onEnd();};
+    audio.onerror=()=>{URL.revokeObjectURL(url);currentAudio=null;setBotSpeaking(false);if(onEnd)onEnd();};
+    audio.play().catch(()=>{setBotSpeaking(false);if(onEnd)onEnd();});
+  })
+  .catch(e=>{console.error('TTS:',e);ttsLoading.classList.remove('show');setBotSpeaking(false);if(onEnd)onEnd();});
+}
+function stopAudio(){
+  if(currentAudio){currentAudio.pause();currentAudio.src='';currentAudio=null;}
+  setBotSpeaking(false);
+}
+
+// ── STT ───────────────────────────────────────────────
+function setupSTT(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR)return;
+  recognition=new SR();recognition.lang=LANG[lang].code;
+  recognition.continuous=false;recognition.interimResults=true;
+  let final='';
+  recognition.onstart=()=>{isRec=true;final='';micBtn.classList.add('recording');
+    setStatus('listening',LANG[lang].statusListen);waveLabel.textContent=LANG[lang].waveUser;
+    waveform.querySelectorAll('.wb').forEach(b=>{b.style.background='#ffaa00';b.classList.add('active');});};
+  recognition.onresult=e=>{let int='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal)final+=e.results[i][0].transcript;else int+=e.results[i][0].transcript;}
+    txtInput.value=final||int;};
+  recognition.onend=()=>{isRec=false;micBtn.classList.remove('recording');
+    waveform.querySelectorAll('.wb').forEach(b=>{b.style.background='#5a8aaa';b.classList.remove('active');});
+    if(final.trim()){sendMsg(final.trim());txtInput.value='';}else setStatus('active',LANG[lang].statusConn);};
+  recognition.onerror=()=>{isRec=false;micBtn.classList.remove('recording');
+    waveform.querySelectorAll('.wb').forEach(b=>{b.style.background='#5a8aaa';b.classList.remove('active');});
+    setStatus('active',LANG[lang].statusConn);};
+}
+
+// ── Claude API ────────────────────────────────────────
+async function callAPI(userMsg){
+  history.push({role:'user',content:userMsg});
+  showTyping();setStatus('active',LANG[lang].statusThink);
+  try{
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({system:LANG[lang].sys,messages:history})});
+    if(!r.ok)throw new Error('API '+r.status);
+    const data=await r.json();
+    const reply=data.content?.[0]?.text||(lang==='or'?'ଦୁଃଖିତ, ଏକ ସମସ୍ୟା ହୋଇଛି।':'Sorry, issue occurred.');
+    removeTyping();history.push({role:'assistant',content:reply});
+    addMsg('bot',reply);speak(reply);
+  }catch(e){
+    removeTyping();
+    const fb=lang==='or'?'ଦୁଃଖିତ, ସଂଯୋଗ ସମସ୍ୟା। ଫୋନ: 0671-2595062':'Connection issue. Call 0671-2595062!';
+    addMsg('bot',fb);speak(fb);console.error(e);
+  }
+}
+function sendMsg(text){
+  if(!text.trim()||!callActive)return;
+  stopAudio();addMsg('user',text);callAPI(text);
+}
+
+// ── Call start/end ────────────────────────────────────
+function startCall(){
+  callActive=true;callStart=Date.now();history=[];
+  idleScreen.style.display='none';txArea.style.display='flex';
+  waveSection.style.display='flex';ctrlZone.style.display='flex';cTimer.style.display='block';
+  setStatus('active',LANG[lang].statusConn);setupSTT();
+  timerInt=setInterval(()=>cTimer.textContent=fmt(Math.floor((Date.now()-callStart)/1000)),1000);
+  setTimeout(()=>{const g=LANG[lang].greeting;history.push({role:'assistant',content:g});addMsg('bot',g);speak(g);},500);
+}
+function endCall(){
+  callActive=false;stopAudio();
+  if(recognition)try{recognition.stop();}catch(e){}
+  clearInterval(timerInt);
+  idleScreen.style.display='flex';txArea.style.display='none';
+  waveSection.style.display='none';ctrlZone.style.display='none';cTimer.style.display='none';
+  cTimer.textContent='00:00';setStatus('',LANG[lang].statusReady);
+  history=[];txArea.innerHTML='';
+}
+
+// ── Chat event listeners ──────────────────────────────
+$('startBtn').addEventListener('click',startCall);
+$('endBtn').addEventListener('click',endCall);
+$('sendBtn').addEventListener('click',()=>{const t=txtInput.value.trim();if(t){sendMsg(t);txtInput.value='';}});
+txtInput.addEventListener('keydown',e=>{if(e.key==='Enter'){const t=txtInput.value.trim();if(t){sendMsg(t);txtInput.value='';}}} );
+$('micBtn').addEventListener('click',()=>{
+  if(!recognition)setupSTT();
+  if(!recognition){alert('Speech recognition not supported. Use Chrome.');return;}
+  if(isRec)recognition.stop();
+  else{stopAudio();setupSTT();try{recognition.start();}catch(e){}}
+});
+$('muteBtn').addEventListener('click',()=>{
+  isMuted=!isMuted;if(isMuted)stopAudio();
+  $('muteBtn').textContent=isMuted?'🔇':'🔊';
+  $('muteBtn').classList.toggle('muted',isMuted);
+});
+
+// ══════════════════════════════════════════════════════
+//  OUTBOUND CALLING
+// ══════════════════════════════════════════════════════
+
+function statusBadge(status){
+  const map={
+    queued:'badge-calling',initiated:'badge-calling',ringing:'badge-ringing',
+    'in-progress':'badge-inprogress',completed:'badge-completed',
+    failed:'badge-failed',busy:'badge-busy','no-answer':'badge-noanswer'
   };
+  const labels={queued:'Queued',initiated:'Calling…',ringing:'Ringing…',
+    'in-progress':'In Progress','completed':'Completed',failed:'Failed',
+    busy:'Busy','no-answer':'No Answer'};
+  const cls=map[status]||'badge-calling';
+  const lbl=labels[status]||status;
+  return `<span class="call-badge ${cls}">${lbl}</span>`;
+}
 
-  function setLang(lang) {
-    currentLang = lang;
-    document.getElementById('btn-or').classList.toggle('active', lang === 'or');
-    document.getElementById('btn-hi').classList.toggle('active', lang === 'hi');
-
-    const s = strings[lang];
-    document.getElementById('chat-title').textContent = s.chatTitle;
-    document.getElementById('call-title').textContent = s.callTitle;
-    document.getElementById('bulk-title').textContent = s.bulkTitle;
-    document.getElementById('label-phone').textContent = s.labelPhone;
-    document.getElementById('tip-phone').textContent = s.tipPhone;
-    document.getElementById('call-btn-text').textContent = s.callBtnText;
-    document.getElementById('label-bulk').textContent = s.labelBulk;
-    document.getElementById('bulk-btn-text').textContent = s.bulkBtnText;
-    document.getElementById('tip-bulk').textContent = s.tipBulk;
-    document.getElementById('log-title').textContent = s.logTitle;
-    document.getElementById('chat-input').placeholder = s.placeholder;
-    document.getElementById('welcome-msg').textContent = s.welcome;
-  }
-
-  async function sendChat() {
-    const input = document.getElementById('chat-input');
-    const msg = input.value.trim();
-    if (!msg) return;
-
-    addMessage(msg, 'user');
-    input.value = '';
-
-    const thinkingEl = addMessage('...', 'bot');
-
-    try {
-      const res = await fetch('/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg, sessionId, language: currentLang })
-      });
-      const data = await res.json();
-      thinkingEl.textContent = data.reply || strings[currentLang].error + 'No reply';
-    } catch (err) {
-      thinkingEl.textContent = strings[currentLang].error + err.message;
-    }
-  }
-
-  function addMessage(text, type) {
-    const win = document.getElementById('chat-window');
-    const el = document.createElement('div');
-    el.className = 'msg ' + type;
-    el.textContent = text;
-    win.appendChild(el);
-    win.scrollTop = win.scrollHeight;
-    return el;
-  }
-
-  async function makeCall() {
-    const phone = document.getElementById('phone-number').value.trim();
-    const btn = document.getElementById('call-btn');
-    const status = document.getElementById('call-status');
-
-    if (!phone) {
-      status.innerHTML = '<span style="color:var(--danger)">⚠️ ' + strings[currentLang].labelPhone + '</span>';
-      return;
-    }
-
-    btn.disabled = true;
-    status.innerHTML = '⏳ ' + strings[currentLang].calling;
-
-    try {
-      const res = await fetch('/make-call', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: phone, language: currentLang })
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        status.innerHTML = '<span style="color:var(--success)">✅ ' + strings[currentLang].success + data.callSid + '</span>';
-        addLogItem(phone, data.status || 'initiated', data.callSid);
-      } else {
-        status.innerHTML = '<span style="color:var(--danger)">❌ ' + strings[currentLang].error + data.error + (data.code ? ' (code: ' + data.code + ')' : '') + '</span>';
-      }
-    } catch (err) {
-      status.innerHTML = '<span style="color:var(--danger)">❌ ' + strings[currentLang].error + err.message + '</span>';
-    }
-
-    btn.disabled = false;
-  }
-
-  async function makeBulkCalls() {
-    const raw = document.getElementById('bulk-numbers').value.trim();
-    const numbers = raw.split('\n').map(n => n.trim()).filter(Boolean);
-
-    if (!numbers.length) return;
-
-    const btn = document.getElementById('bulk-btn');
-    btn.disabled = true;
-
-    try {
-      const res = await fetch('/bulk-call', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ numbers, language: currentLang })
-      });
-      const data = await res.json();
-
-      if (data.results) {
-        data.results.forEach(r => {
-          addLogItem(r.number, r.error ? 'error' : r.status, r.sid || r.error);
-        });
-      }
-    } catch (err) {
-      addLogItem('bulk', 'error', err.message);
-    }
-
-    btn.disabled = false;
-  }
-
-  function addLogItem(number, status, detail) {
-    const log = document.getElementById('call-log');
-    const noCallsEl = document.getElementById('no-calls-text');
-    if (noCallsEl) noCallsEl.parentElement.remove();
-
-    const item = document.createElement('div');
-    item.className = 'log-item';
-    item.innerHTML = `
+function renderLog(){
+  const el=$('callLog');
+  if(callLog.length===0){el.innerHTML='<div class="no-calls">No calls made yet.</div>';return;}
+  el.innerHTML=callLog.map(c=>`
+    <div class="call-item" id="log-${c.sid||c.id}">
       <div>
-        <strong>${number}</strong>
-        <span style="color:var(--muted);font-size:11px;margin-left:6px">${detail || ''}</span>
+        <div class="call-num">${c.phone}</div>
+        <div class="call-info">${c.lang==='or'?'ଓଡ଼ିଆ':'English'} · ${c.time}</div>
       </div>
-      <span class="log-status ${status}">${status}</span>
-    `;
-    log.insertBefore(item, log.firstChild);
+      ${statusBadge(c.status)}
+    </div>`).join('');
+}
+
+function updateLogItem(sid,status){
+  const item=document.getElementById('log-'+sid);
+  if(item){item.querySelector('.call-badge').outerHTML=statusBadge(status);}
+  const entry=callLog.find(c=>c.sid===sid);
+  if(entry)entry.status=status;
+}
+
+async function pollStatus(sid,maxPolls=30){
+  for(let i=0;i<maxPolls;i++){
+    await new Promise(r=>setTimeout(r,4000));
+    try{
+      const r=await fetch('/api/call-status/'+sid);
+      const d=await r.json();
+      updateLogItem(sid,d.status);
+      if(['completed','failed','busy','no-answer','canceled'].includes(d.status)){
+        activeCallCount=Math.max(0,activeCallCount-1);
+        updateActiveCount();
+        return d.status;
+      }
+    }catch(e){break;}
+  }
+  return 'unknown';
+}
+
+function updateActiveCount(){
+  if(activeCallCount>0){
+    $('activeCalls').style.display='flex';
+    $('activeCount').textContent=activeCallCount;
+  }else{
+    $('activeCalls').style.display='none';
+  }
+}
+
+async function makeCall(){
+  const phone=$('ocPhone').value.trim();
+  const callLang=$('ocLang').value;
+  if(!phone){alert('Please enter a phone number with country code, e.g. +919876543210');return;}
+  if(!phone.startsWith('+')){alert('Phone number must start with + and country code.\nExample: +919876543210 for India');return;}
+
+  const btn=$('callNowBtn');
+  const statusDiv=$('singleStatus');
+  btn.disabled=true;btn.innerHTML='<span>⏳</span> Initiating call…';
+
+  try{
+    const r=await fetch('/api/outbound-call',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({phone,lang:callLang})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'Server error');
+
+    const entry={phone,lang:callLang,sid:d.callSid,status:'initiated',
+      time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+      id:Date.now()};
+    callLog.unshift(entry);renderLog();
+
+    activeCallCount++;updateActiveCount();
+    $('ocStatusBar').textContent=`Call to ${phone} initiated. SID: ${d.callSid}`;
+    statusDiv.style.display='block';
+    statusDiv.style.color='var(--ag)';
+    statusDiv.textContent=`✅ Call initiated! SID: ${d.callSid}. Arjun is calling ${phone}…`;
+
+    // Poll for status updates
+    pollStatus(d.callSid).then(finalStatus=>{
+      statusDiv.textContent=`Call to ${phone} ended with status: ${finalStatus}`;
+      statusDiv.style.color='var(--tm)';
+    });
+
+  }catch(e){
+    statusDiv.style.display='block';statusDiv.style.color='var(--red)';
+    statusDiv.textContent='❌ Error: '+e.message+'. Check Twilio credentials in Render env vars.';
+    $('ocStatusBar').textContent='Call failed: '+e.message;
+  }
+  btn.disabled=false;btn.innerHTML='<span>📞</span> Call Now';
+}
+
+async function startBulk(){
+  if(bulkRunning)return;
+  const raw=$('bulkNumbers').value.trim();
+  if(!raw){alert('Please enter at least one phone number.');return;}
+  const nums=raw.split('\n').map(n=>n.trim()).filter(n=>n.length>5);
+  if(nums.length===0){alert('No valid numbers found.');return;}
+  const callLang=$('bulkLang').value;
+
+  bulkRunning=true;
+  const btn=$('bulkBtn');
+  btn.disabled=true;
+  $('bulkBtnTxt').textContent=`Calling 0 / ${nums.length}…`;
+
+  for(let i=0;i<nums.length;i++){
+    const phone=nums[i];
+    $('bulkBtnTxt').textContent=`Calling ${i+1} / ${nums.length} — ${phone}`;
+    $('ocStatusBar').textContent=`Bulk call ${i+1}/${nums.length}: calling ${phone}…`;
+    try{
+      const r=await fetch('/api/outbound-call',{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({phone,lang:callLang})});
+      const d=await r.json();
+      const status=r.ok?'initiated':'failed';
+      callLog.unshift({phone,lang:callLang,sid:d.callSid||null,status,
+        time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+        id:Date.now()});
+      if(r.ok&&d.callSid){activeCallCount++;updateActiveCount();pollStatus(d.callSid);}
+    }catch(e){
+      callLog.unshift({phone,lang:callLang,sid:null,status:'failed',
+        time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),id:Date.now()});
+    }
+    renderLog();
+    if(i<nums.length-1)await new Promise(r=>setTimeout(r,5000));
   }
 
-  function clearLog() {
-    const log = document.getElementById('call-log');
-    log.innerHTML = `<div class="log-item" style="color:var(--muted)"><span>${strings[currentLang].noCalls}</span></div>`;
-  }
-</script>
-
-</body>
-</html>
+  bulkRunning=false;
+  btn.disabled=false;$('bulkBtnTxt').textC
