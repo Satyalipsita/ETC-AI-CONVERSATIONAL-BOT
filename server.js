@@ -8,6 +8,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static('public'));
+app.get('/ping', (req, res) => res.send('ok'));
 
 // ── Config ───────────────────────────────────────────────────────────────────
 const TWILIO_SID   = process.env.TWILIO_ACCOUNT_SID;
