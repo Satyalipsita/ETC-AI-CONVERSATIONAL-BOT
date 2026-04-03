@@ -81,7 +81,8 @@ async function sarvamTTS(text, lang, forPhone = true) {
   if (!SARVAM_KEY) throw new Error('SARVAM_API_KEY is not set in environment variables');
 
   const langCode = lang === 'or' ? 'od-IN' : 'en-IN';
-  const speaker  = lang === 'or' ? 'meera' : 'arjun';
+  // anushka = warm female Odia/Hindi voice; rahul = clear male Indian English voice
+  const speaker  = lang === 'or' ? 'anushka' : 'rahul';
 
   // Phone calls need 8kHz WAV; web chat sounds better at 22050Hz
   const sampleRate = forPhone ? 8000 : 22050;
