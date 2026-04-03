@@ -75,15 +75,16 @@ setInterval(() => {
 }, 600000);
 
 // ══════════════════════════════════════════════════════════════════════════
-//  TTS  —  Sarvam AI Bulbul v2 (natural Odia + Indian English)
-//          Fallback → Google Translate (no API key needed)
+//  TTS  —  Sarvam AI Bulbul v2 ONLY (Google TTS removed)
 // ══════════════════════════════════════════════════════════════════════════
-async function sarvamTTS(text, lang) {
-  if (!SARVAM_KEY) throw new Error('No Sarvam key');
+async function sarvamTTS(text, lang, forPhone = true) {
+  if (!SARVAM_KEY) throw new Error('SARVAM_API_KEY is not set in environment variables');
 
   const langCode = lang === 'or' ? 'od-IN' : 'en-IN';
-  // Warm, conversational Odia/English speakers
-  const speaker  = lang === 'or' ? 'meera'  : 'arjun';
+  const speaker  = lang === 'or' ? 'meera' : 'arjun';
+
+  // Phone calls need 8kHz WAV; web chat sounds better at 22050Hz
+  const sampleRate = forPhone ? 8000 : 22050;
 
   const r = await fetch('https://api.sarvam.ai/text-to-speech', {
     method:  'POST',
@@ -92,76 +93,39 @@ async function sarvamTTS(text, lang) {
       'Content-Type':         'application/json'
     },
     body: JSON.stringify({
-      inputs:               [text.replace(/[*_`#]/g,'').trim()],
+      inputs:               [text.replace(/[*_`#]/g, '').trim()],
       target_language_code: langCode,
       speaker,
       model:                'bulbul:v2',
       pitch:                0,
       pace:                 1.1,
       loudness:             1.5,
-      speech_sample_rate:   8000,     // Twilio needs 8kHz
+      speech_sample_rate:   sampleRate,
       enable_preprocessing: true,
       output_format:        'wav'
     })
   });
 
-  if (!r.ok) throw new Error(`Sarvam TTS ${r.status}: ${await r.text()}`);
-  const json = await r.json();
+  if (!r.ok) {
+    const errBody = await r.text();
+    console.error(`Sarvam TTS error ${r.status}:`, errBody);
+    throw new Error(`Sarvam TTS ${r.status}: ${errBody}`);
+  }
 
-  // Sarvam returns base64-encoded audio
-  const b64 = json.audios?.[0];
+  const json = await r.json();
+  const b64  = json.audios?.[0];
   if (!b64) throw new Error('Sarvam TTS: no audio in response');
   return Buffer.from(b64, 'base64');
 }
 
-function splitText(str, max) {
-  const chunks = [], sents = str.replace(/([।.!?])\s*/g,'$1|').split('|');
-  let cur = '';
-  for (const s of sents) {
-    if (!s.trim()) continue;
-    if ((cur+s).length > max) {
-      if (cur.trim()) chunks.push(cur.trim());
-      cur = s.length > max ? '' : s;
-      if (s.length > max) {
-        s.split(' ').forEach(w => {
-          if ((cur+' '+w).length>max){if(cur.trim())chunks.push(cur.trim());cur=w;}
-          else cur+=(cur?' ':'')+w;
-        });
-      }
-    } else cur += (cur?' ':'')+s;
-  }
-  if (cur.trim()) chunks.push(cur.trim());
-  return chunks.filter(c=>c.length>0);
+// Master TTS — Sarvam only, clear error if it fails
+async function makeTTS(text, lang, forPhone = true) {
+  const clean = text.replace(/[*_`#\n]/g, ' ').replace(/\s+/g, ' ').trim();
+  return await sarvamTTS(clean, lang, forPhone);
 }
 
-async function googleTTS(text, lang) {
-  const gl = lang==='or' ? 'or' : 'en-IN';
-  const bufs = [];
-  for (const chunk of splitText(text.trim(), 190)) {
-    const url = `https://translate.google.com/translate_tts?ie=UTF-8`
-      +`&q=${encodeURIComponent(chunk)}&tl=${gl}&client=tw-ob&ttsspeed=0.9`;
-    const r = await fetch(url, { headers:{
-      'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-      'Referer':'https://translate.google.com/'
-    }});
-    if (!r.ok) throw new Error('Google TTS '+r.status);
-    bufs.push(await r.buffer());
-  }
-  return Buffer.concat(bufs);
-}
-
-// Master TTS: Sarvam first, Google fallback
-async function makeTTS(text, lang) {
-  const clean = text.replace(/[*_`#\n]/g,' ').replace(/\s+/g,' ').trim();
-  try   { return await sarvamTTS(clean, lang); }
-  catch(e) {
-    console.warn('Sarvam TTS failed, using Google fallback:', e.message);
-    return await googleTTS(clean, lang);
-  }
-}
-
-async function storeAudio(text, lang) {
-  const buf = await makeTTS(text, lang);
+async function storeAudio(text, lang, forPhone = true) {
+  const buf = await makeTTS(text, lang, forPhone);
   const id  = uuidv4();
   audioStore.set(id, { buf, ts: Date.now() });
   return id;
@@ -171,42 +135,19 @@ async function storeAudio(text, lang) {
 app.get('/audio/:id', (req, res) => {
   const e = audioStore.get(req.params.id);
   if (!e) return res.status(404).send('Not found');
-  res.set('Content-Type','audio/wav').set('Cache-Control','no-store').send(e.buf);
+  res.set('Content-Type', 'audio/wav').set('Cache-Control', 'no-store').send(e.buf);
 });
 
 // ── Web chat: /api/tts ────────────────────────────────────────────────────────
 app.post('/api/tts', async (req, res) => {
   const { text, lang } = req.body;
-  if (!text?.trim()) return res.status(400).json({ error:'No text' });
+  if (!text?.trim()) return res.status(400).json({ error: 'No text' });
+
   try {
-    // Web chat uses mp3 format — override for web
-    const clean = text.replace(/[*_`#\n]/g,' ').trim();
-    let buf;
-    if (SARVAM_KEY) {
-      const langCode = lang==='or' ? 'od-IN' : 'en-IN';
-      const r = await fetch('https://api.sarvam.ai/text-to-speech', {
-        method:'POST',
-        headers:{'api-subscription-key':SARVAM_KEY,'Content-Type':'application/json'},
-        body: JSON.stringify({
-          inputs:[clean], target_language_code:langCode,
-          speaker: lang==='or'?'meera':'arjun',
-          model:'bulbul:v2', pitch:0, pace:1.0, loudness:1.5,
-          speech_sample_rate:22050, enable_preprocessing:true, output_format:'wav'
-        })
-      });
-      if (r.ok) {
-        const j = await r.json();
-        if (j.audios?.[0]) {
-          buf = Buffer.from(j.audios[0],'base64');
-          res.set('Content-Type','audio/wav').set('Cache-Control','no-store').send(buf);
-          return;
-        }
-      }
-    }
-    // Fallback
-    buf = await googleTTS(clean, lang||'en');
-    res.set('Content-Type','audio/mpeg').set('Cache-Control','no-store').send(buf);
-  } catch(e) {
+    const clean = text.replace(/[*_`#\n]/g, ' ').trim();
+    const buf   = await sarvamTTS(clean, lang || 'en', false); // web = high quality
+    res.set('Content-Type', 'audio/wav').set('Cache-Control', 'no-store').send(buf);
+  } catch (e) {
     console.error('TTS error:', e.message);
     res.status(500).json({ error: e.message });
   }
@@ -217,22 +158,23 @@ app.post('/api/chat', async (req, res) => {
   const { messages, system } = req.body;
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':ANTH_KEY,'anthropic-version':'2023-06-01'},
-      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, system, messages })
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': ANTH_KEY, 'anthropic-version': '2023-06-01' },
+      body:    JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system, messages })
     });
     res.json(await r.json());
-  } catch(e) { res.status(500).json({ error:e.message }); }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ── Claude reply for phone ────────────────────────────────────────────────────
 async function claudeReply(history, lang) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':ANTH_KEY,'anthropic-version':'2023-06-01'},
-    body: JSON.stringify({
-      model:'claude-sonnet-4-20250514', max_tokens:180,
-      system: lang==='or' ? SYS_OR : SYS_EN,
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': ANTH_KEY, 'anthropic-version': '2023-06-01' },
+    body:    JSON.stringify({
+      model:    'claude-sonnet-4-20250514',
+      max_tokens: 180,
+      system:   lang === 'or' ? SYS_OR : SYS_EN,
       messages: history
     })
   });
@@ -241,217 +183,205 @@ async function claudeReply(history, lang) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  ASYNC JOB SYSTEM — Twilio gets instant TwiML, job runs in background
-//  No more timeout errors ever
+//  ASYNC JOB SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════
 function startJob(jobId, speech, callSid, lang) {
-  jobStore.set(jobId, { status:'pending', audioId:null, ts:Date.now() });
+  jobStore.set(jobId, { status: 'pending', audioId: null, ts: Date.now() });
   (async () => {
     try {
-      const state = callStore.get(callSid) || { history:[], lang };
-      state.history.push({ role:'user', content:speech });
+      const state = callStore.get(callSid) || { history: [], lang };
+      state.history.push({ role: 'user', content: speech });
       const reply   = await claudeReply(state.history, lang);
-      state.history.push({ role:'assistant', content:reply });
+      state.history.push({ role: 'assistant', content: reply });
       if (state.history.length > 20) state.history = state.history.slice(-20);
       callStore.set(callSid, state);
-      const audioId = await storeAudio(reply, lang);
-      jobStore.set(jobId, { status:'done', audioId, ts:Date.now() });
-    } catch(e) {
+      const audioId = await storeAudio(reply, lang, true); // phone quality
+      jobStore.set(jobId, { status: 'done', audioId, ts: Date.now() });
+    } catch (e) {
       console.error(`Job ${jobId} error:`, e.message);
-      jobStore.set(jobId, { status:'error', audioId:null, ts:Date.now() });
+      jobStore.set(jobId, { status: 'error', audioId: null, ts: Date.now() });
     }
   })();
 }
-
-function twiml(vr) { return vr.toString(); }
 
 function gatherTwiML(audioId, action, glang) {
   const vr = new twilio.twiml.VoiceResponse();
   if (audioId) vr.play(`${PUBLIC_URL}/audio/${audioId}`);
   const g = vr.gather({
-    input:'speech', action, method:'POST',
-    language:glang, speechTimeout:'3', timeout:'10'
+    input: 'speech', action, method: 'POST',
+    language: glang, speechTimeout: '3', timeout: '10'
   });
-  g.pause({ length:1 });
-  vr.redirect({ method:'POST' }, action+'&noInput=1');
+  g.pause({ length: 1 });
+  vr.redirect({ method: 'POST' }, action + '&noInput=1');
   return vr.toString();
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-//  OUTBOUND CALL — pre-generate ALL static audio BEFORE dialing
-//  /call/start will respond in < 100ms
+//  OUTBOUND CALL
 // ══════════════════════════════════════════════════════════════════════════
 app.post('/api/outbound-call', async (req, res) => {
-  const { phone, lang='or' } = req.body;
+  const { phone, lang = 'or' } = req.body;
   if (!phone)
-    return res.status(400).json({ error:'Phone number required' });
+    return res.status(400).json({ error: 'Phone number required' });
   if (!phone.startsWith('+'))
-    return res.status(400).json({ error:'Use format: +91XXXXXXXXXX' });
-  if (!TW_SID||!TW_TOKEN||!TW_FROM)
-    return res.status(500).json({ error:'Twilio credentials not set in Render env vars' });
+    return res.status(400).json({ error: 'Use format: +91XXXXXXXXXX' });
+  if (!TW_SID || !TW_TOKEN || !TW_FROM)
+    return res.status(500).json({ error: 'Twilio credentials not set in Render env vars' });
   if (!PUBLIC_URL)
-    return res.status(500).json({ error:'PUBLIC_URL not set in Render env vars' });
+    return res.status(500).json({ error: 'PUBLIC_URL not set in Render env vars' });
+  if (!SARVAM_KEY)
+    return res.status(500).json({ error: 'SARVAM_API_KEY not set in Render env vars' });
 
   try {
     const t = TEXTS[lang] || TEXTS.or;
-    console.log(`Pre-generating all audio for ${phone} (${lang})...`);
+    console.log(`Pre-generating audio for ${phone} (${lang})...`);
 
-    // Generate all 4 static audio files in parallel — takes ~2-3 seconds total
     const [greetId, nudgeId, sorryId] = await Promise.all([
-      storeAudio(t.greet, lang),
-      storeAudio(t.nudge, lang),
-      storeAudio(t.sorry, lang)
+      storeAudio(t.greet, lang, true),
+      storeAudio(t.nudge, lang, true),
+      storeAudio(t.sorry, lang, true)
     ]);
 
-    console.log(`All audio ready. Dialing ${phone}...`);
+    console.log(`Audio ready. Dialing ${phone}...`);
     const client = twilio(TW_SID, TW_TOKEN);
     const call   = await client.calls.create({
-      to:    phone,
-      from:  TW_FROM,
-      url:   `${PUBLIC_URL}/call/start?lang=${lang}&g=${greetId}&n=${nudgeId}&s=${sorryId}`,
-      method:'POST',
+      to:     phone,
+      from:   TW_FROM,
+      url:    `${PUBLIC_URL}/call/start?lang=${lang}&g=${greetId}&n=${nudgeId}&s=${sorryId}`,
+      method: 'POST',
       statusCallback:       `${PUBLIC_URL}/call/status`,
       statusCallbackMethod: 'POST'
     });
 
     callStore.set(call.sid, {
-      history: [{ role:'assistant', content:t.greet }],
+      history: [{ role: 'assistant', content: t.greet }],
       lang,
       nudgeId,
       sorryId
     });
 
     console.log(`Dialing started — SID: ${call.sid}`);
-    res.json({ success:true, callSid:call.sid, status:call.status });
+    res.json({ success: true, callSid: call.sid, status: call.status });
 
-  } catch(e) {
+  } catch (e) {
     console.error('Outbound call error:', e.message);
     res.status(500).json({ error: e.message });
   }
 });
 
-// ── /call/start — INSTANT (audio already generated) ──────────────────────────
+// ── /call/start ───────────────────────────────────────────────────────────────
 app.post('/call/start', async (req, res) => {
   const lang    = req.query.lang || 'or';
   const greetId = req.query.g;
   const callSid = req.body.CallSid;
-  const glang   = lang==='or' ? 'or-IN' : 'en-IN';
+  const glang   = lang === 'or' ? 'or-IN' : 'en-IN';
   const action  = `${PUBLIC_URL}/call/respond?lang=${lang}&sid=${callSid}`;
 
   console.log(`Call answered: ${callSid}`);
 
   if (greetId && audioStore.has(greetId)) {
-    // ✅ Fast path — pre-generated, respond instantly
     res.type('text/xml').send(gatherTwiML(greetId, action, glang));
   } else {
-    // Fallback (should not happen normally)
     console.warn('Greeting not found, generating now...');
     try {
-      const id = await storeAudio(TEXTS[lang].greet, lang);
+      const id = await storeAudio(TEXTS[lang].greet, lang, true);
       res.type('text/xml').send(gatherTwiML(id, action, glang));
-    } catch(e) {
+    } catch (e) {
+      console.error('Greeting generation failed:', e.message);
       const vr = new twilio.twiml.VoiceResponse();
-      vr.say({ language:glang }, lang==='or'
+      vr.say({ language: glang }, lang === 'or'
         ? 'Namaskara, mun Arjun, DRIEMS Polytechnic ru phone karuchu.'
         : 'Hello, this is Arjun from DRIEMS Polytechnic.');
-      vr.gather({ input:'speech', action, method:'POST', language:glang, timeout:'8' });
+      vr.gather({ input: 'speech', action, method: 'POST', language: glang, timeout: '8' });
       res.type('text/xml').send(vr.toString());
     }
   }
 });
 
-// ── /call/respond — INSTANT: start background job, return 2s pause ───────────
+// ── /call/respond ─────────────────────────────────────────────────────────────
 app.post('/call/respond', async (req, res) => {
   const lang    = req.query.lang  || 'or';
   const callSid = req.query.sid   || req.body.CallSid;
-  const speech  = (req.body.SpeechResult||'').trim();
+  const speech  = (req.body.SpeechResult || '').trim();
   const noInput = req.query.noInput === '1';
-  const glang   = lang==='or' ? 'or-IN' : 'en-IN';
+  const glang   = lang === 'or' ? 'or-IN' : 'en-IN';
   const action  = `${PUBLIC_URL}/call/respond?lang=${lang}&sid=${callSid}`;
+  const state   = callStore.get(callSid) || { nudgeId: null, sorryId: null };
 
-  const state = callStore.get(callSid) || { nudgeId:null, sorryId:null };
   console.log(`Speech [${callSid}]: "${speech}"`);
 
-  // No input — use pre-generated nudge
   if (!speech || noInput) {
     const nudgeId = state.nudgeId;
     const vr = new twilio.twiml.VoiceResponse();
     if (nudgeId && audioStore.has(nudgeId)) vr.play(`${PUBLIC_URL}/audio/${nudgeId}`);
-    const g = vr.gather({ input:'speech', action, method:'POST', language:glang, timeout:'10' });
-    g.pause({ length:1 });
+    const g = vr.gather({ input: 'speech', action, method: 'POST', language: glang, timeout: '10' });
+    g.pause({ length: 1 });
     return res.type('text/xml').send(vr.toString());
   }
 
-  // Goodbye
   if (BYE_WORDS.some(w => speech.toLowerCase().includes(w))) {
     const byeText = TEXTS[lang]?.bye || 'Thank you. Goodbye!';
     try {
-      const id = await storeAudio(byeText, lang);
+      const id = await storeAudio(byeText, lang, true);
       const vr = new twilio.twiml.VoiceResponse();
       vr.play(`${PUBLIC_URL}/audio/${id}`);
-      vr.pause({ length:1 });
+      vr.pause({ length: 1 });
       vr.hangup();
       return res.type('text/xml').send(vr.toString());
-    } catch(e) {
+    } catch (e) {
       const vr = new twilio.twiml.VoiceResponse();
-      vr.say({ language:glang }, 'Thank you. Goodbye!');
+      vr.say({ language: glang }, 'Thank you. Goodbye!');
       vr.hangup();
       return res.type('text/xml').send(vr.toString());
     }
   }
 
-  // Normal speech — start background job, respond immediately with short pause
   const jobId   = uuidv4();
   const pollUrl = `${PUBLIC_URL}/call/poll?j=${jobId}&lang=${lang}&sid=${callSid}&p=0`;
   startJob(jobId, speech, callSid, lang);
 
-  // This response goes back to Twilio in < 10ms — zero timeout risk
   const vr = new twilio.twiml.VoiceResponse();
-  vr.pause({ length:2 });              // natural "thinking" pause
-  vr.redirect({ method:'POST' }, pollUrl);
+  vr.pause({ length: 2 });
+  vr.redirect({ method: 'POST' }, pollUrl);
   res.type('text/xml').send(vr.toString());
 });
 
-// ── /call/poll — check if job done, serve audio or wait more ─────────────────
+// ── /call/poll ────────────────────────────────────────────────────────────────
 app.post('/call/poll', async (req, res) => {
   const jobId   = req.query.j    || '';
   const lang    = req.query.lang || 'or';
   const callSid = req.query.sid  || req.body.CallSid;
-  const polls   = parseInt(req.query.p||'0');
-  const glang   = lang==='or' ? 'or-IN' : 'en-IN';
+  const polls   = parseInt(req.query.p || '0');
+  const glang   = lang === 'or' ? 'or-IN' : 'en-IN';
   const action  = `${PUBLIC_URL}/call/respond?lang=${lang}&sid=${callSid}`;
   const state   = callStore.get(callSid) || {};
-
-  const job = jobStore.get(jobId);
+  const job     = jobStore.get(jobId);
 
   if (job?.status === 'done' && job.audioId) {
-    // ✅ Reply ready — play it
     console.log(`Job ${jobId} done after ${polls} polls`);
     return res.type('text/xml').send(gatherTwiML(job.audioId, action, glang));
   }
 
   if (job?.status === 'error') {
-    // Error — use pre-generated sorry
     const sorryId = state.sorryId;
     const vr = new twilio.twiml.VoiceResponse();
     if (sorryId && audioStore.has(sorryId)) vr.play(`${PUBLIC_URL}/audio/${sorryId}`);
-    else vr.say({ language:glang }, 'Sorry, please try again.');
-    const g = vr.gather({ input:'speech', action, method:'POST', language:glang, timeout:'10' });
-    g.pause({ length:1 });
+    else vr.say({ language: glang }, 'Sorry, please try again.');
+    const g = vr.gather({ input: 'speech', action, method: 'POST', language: glang, timeout: '10' });
+    g.pause({ length: 1 });
     return res.type('text/xml').send(vr.toString());
   }
 
-  // Still pending — wait 2 more seconds, max 12 polls (24 sec total)
   if (polls >= 12) {
     const vr = new twilio.twiml.VoiceResponse();
-    vr.gather({ input:'speech', action, method:'POST', language:glang, timeout:'10' });
+    vr.gather({ input: 'speech', action, method: 'POST', language: glang, timeout: '10' });
     return res.type('text/xml').send(vr.toString());
   }
 
-  const nextPoll = `${PUBLIC_URL}/call/poll?j=${jobId}&lang=${lang}&sid=${callSid}&p=${polls+1}`;
+  const nextPoll = `${PUBLIC_URL}/call/poll?j=${jobId}&lang=${lang}&sid=${callSid}&p=${polls + 1}`;
   const vr = new twilio.twiml.VoiceResponse();
-  vr.pause({ length:2 });
-  vr.redirect({ method:'POST' }, nextPoll);
+  vr.pause({ length: 2 });
+  vr.redirect({ method: 'POST' }, nextPoll);
   res.type('text/xml').send(vr.toString());
 });
 
@@ -459,7 +389,7 @@ app.post('/call/poll', async (req, res) => {
 app.post('/call/status', (req, res) => {
   const { CallSid, CallStatus } = req.body;
   console.log(`Status: ${CallSid} → ${CallStatus}`);
-  if (['completed','failed','busy','no-answer','canceled'].includes(CallStatus))
+  if (['completed', 'failed', 'busy', 'no-answer', 'canceled'].includes(CallStatus))
     callStore.delete(CallSid);
   res.sendStatus(200);
 });
@@ -469,8 +399,8 @@ app.get('/api/call-status/:sid', async (req, res) => {
   try {
     const client = twilio(TW_SID, TW_TOKEN);
     const call   = await client.calls(req.params.sid).fetch();
-    res.json({ status:call.status, duration:call.duration||0 });
-  } catch(e) { res.status(500).json({ error:e.message }); }
+    res.json({ status: call.status, duration: call.duration || 0 });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 const PORT = process.env.PORT || 3000;
