@@ -207,12 +207,20 @@ function startJob(jobId, speech, callSid, lang) {
 
 function gatherTwiML(audioId, action, glang) {
   const vr = new twilio.twiml.VoiceResponse();
-  if (audioId) vr.play(`${PUBLIC_URL}/audio/${audioId}`);
+  // Play audio + listen for speech INSIDE the same Gather
+  // This prevents Twilio's default "press any key" prompt
   const g = vr.gather({
-    input: 'speech', action, method: 'POST',
-    language: glang, speechTimeout: '3', timeout: '10'
+    input: 'speech',
+    action,
+    method: 'POST',
+    language: glang,
+    speechTimeout: 'auto',
+    timeout: '10',
+    actionOnEmptyResult: true   // always POST back even if silent
   });
+  if (audioId) g.play(`${PUBLIC_URL}/audio/${audioId}`);
   g.pause({ length: 1 });
+  // After gather completes (timeout), redirect back as noInput
   vr.redirect({ method: 'POST' }, action + '&noInput=1');
   return vr.toString();
 }
@@ -314,8 +322,12 @@ app.post('/call/respond', async (req, res) => {
   if (!speech || noInput) {
     const nudgeId = state.nudgeId;
     const vr = new twilio.twiml.VoiceResponse();
-    if (nudgeId && audioStore.has(nudgeId)) vr.play(`${PUBLIC_URL}/audio/${nudgeId}`);
-    const g = vr.gather({ input: 'speech', action, method: 'POST', language: glang, timeout: '10' });
+    const g = vr.gather({
+      input: 'speech', action, method: 'POST',
+      language: glang, speechTimeout: 'auto', timeout: '10',
+      actionOnEmptyResult: true
+    });
+    if (nudgeId && audioStore.has(nudgeId)) g.play(`${PUBLIC_URL}/audio/${nudgeId}`);
     g.pause({ length: 1 });
     return res.type('text/xml').send(vr.toString());
   }
@@ -366,9 +378,13 @@ app.post('/call/poll', async (req, res) => {
   if (job?.status === 'error') {
     const sorryId = state.sorryId;
     const vr = new twilio.twiml.VoiceResponse();
-    if (sorryId && audioStore.has(sorryId)) vr.play(`${PUBLIC_URL}/audio/${sorryId}`);
-    else vr.say({ language: glang }, 'Sorry, please try again.');
-    const g = vr.gather({ input: 'speech', action, method: 'POST', language: glang, timeout: '10' });
+    const g = vr.gather({
+      input: 'speech', action, method: 'POST',
+      language: glang, speechTimeout: 'auto', timeout: '10',
+      actionOnEmptyResult: true
+    });
+    if (sorryId && audioStore.has(sorryId)) g.play(`${PUBLIC_URL}/audio/${sorryId}`);
+    else g.say({ language: glang }, 'Sorry, please try again.');
     g.pause({ length: 1 });
     return res.type('text/xml').send(vr.toString());
   }
