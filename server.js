@@ -271,15 +271,14 @@ setInterval(() => {
 //  TTS — Sarvam AI bulbul:v3 (only)
 //
 //  VOICE SELECTION:
-//  Odia  → "manisha" — most natural native Odia female speaker in Sarvam
-//  English → "priya" — warm Indian English female voice
-//  If manisha sounds unnatural, try "vidya" as alternative
+//  Odia    → "suhani" — natural female voice for bulbul:v3 (try "rupali" as alternative)
+//  English → "priya"  — warm Indian English female voice
 // ══════════════════════════════════════════════════════════════════════════
 async function sarvamTTS(text, lang, forPhone = true) {
   if (!SARVAM_KEY) throw new Error('SARVAM_API_KEY is not set');
 
   const langCode   = lang === 'or' ? 'od-IN' : 'en-IN';
-  const speaker    = lang === 'or' ? 'manisha' : 'priya';  // manisha = natural Odia female
+  const speaker    = lang === 'or' ? 'suhani' : 'priya';   // suhani = natural female, bulbul:v3 compatible
   const sampleRate = forPhone ? 8000 : 22050;
 
   const r = await fetch('https://api.sarvam.ai/text-to-speech', {
