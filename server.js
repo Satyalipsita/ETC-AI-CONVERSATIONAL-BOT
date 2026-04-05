@@ -1,369 +1,598 @@
-require("dotenv").config();
-const express    = require("express");
-const bodyParser = require("body-parser");
-const axios      = require("axios");
-const fs         = require("fs");
-const path       = require("path");
-const { v4: uuidv4 } = require("uuid");
-const Anthropic  = require("@anthropic-ai/sdk");
-const twilio     = require("twilio");
+const express = require('express');
+const fetch   = require('node-fetch');
+const twilio  = require('twilio');
+const { v4: uuidv4 } = require('uuid');
+require('dotenv').config();
 
-// ──────────────────────────────────────────────────────────
-//  SETUP
-// ──────────────────────────────────────────────────────────
 const app = express();
-app.use(bodyParser.json());                          // for /api/* routes (UI)
-app.use(bodyParser.urlencoded({ extended: false })); // for Twilio webhooks
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(express.static('public'));
 
-const PORT             = process.env.PORT || 3000;
-const PUBLIC_URL       = (process.env.PUBLIC_URL || "").replace(/\/$/, "");
-const SARVAM_API_KEY   = process.env.SARVAM_API_KEY;
-const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
-const TWILIO_AUTH_TOKEN  = process.env.TWILIO_AUTH_TOKEN;
-const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
-const AUDIO_DIR        = "/tmp/audio";
+app.get('/ping', (req, res) => res.send('ok'));
 
-if (!fs.existsSync(AUDIO_DIR)) fs.mkdirSync(AUDIO_DIR, { recursive: true });
+// ── Config ────────────────────────────────────────────────────────────────────
+const ANTH_KEY       = process.env.ANTHROPIC_API_KEY;
+const TW_SID         = process.env.TWILIO_ACCOUNT_SID;
+const TW_TOKEN       = process.env.TWILIO_AUTH_TOKEN;
+const TW_FROM        = process.env.TWILIO_PHONE_NUMBER;
+const PUBLIC_URL     = process.env.PUBLIC_URL;
+const SARVAM_KEY     = process.env.SARVAM_API_KEY;
+const GOOGLE_TTS_KEY = process.env.GOOGLE_TTS_KEY;
 
-const claude       = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const twilioClient = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+// ══════════════════════════════════════════════════════════════════════════
+//  SYSTEM PROMPTS
+//  Priya — confident, warm, knowledgeable DRIEMS ETC counsellor
+// ══════════════════════════════════════════════════════════════════════════
+const SYS_OR = `ତୁମେ ପ୍ରିୟା — DRIEMS Polytechnic, ତଙ୍ଗି, କଟକ ର ଜଣେ ଅଭିଜ୍ଞ admission counsellor। ତୁମେ ଏକ phone call ରେ ଜଣେ ଛାତ୍ର ବା ଅଭିଭାବକଙ୍କ ସହ ଓଡ଼ିଆ ରେ କଥା ହେଉଛ।
 
-// ──────────────────────────────────────────────────────────
-//  KNOWLEDGE BASE
-// ──────────────────────────────────────────────────────────
-const KNOWLEDGE_BASE = `
-DRIEMS Polytechnic – ETC Branch Admissions (2025-26)
-=====================================================
+ତୁମର ବ୍ୟକ୍ତିତ୍ୱ:
+- ଆତ୍ମବିଶ୍ୱାସୀ, ଉଷ୍ମ ଓ ସ୍ୱାଭାବିକ — ଯେପରି ଜଣେ ବଡ଼ ଦିଦି ଯତ୍ନ ନେଇ ପରାମର୍ଶ ଦେଉଛି
+- "ହଁ", "ଦେଖନ୍ତୁ", "ବିଲ୍କୁଲ୍", "ଆଜ୍ଞା", "ଭଲ ପ୍ରଶ୍ନ କରିଛନ୍ତି" ଭଳି phrases ବ୍ୟବହାର କର
+- caller ଯାହା ପଚାରିଛି ତାର directly ଉତ୍ତର ଦିଅ — scripted ବା robotic ଶୁଣାଯିବ ନାହିଁ
+- ଯଦି caller uncertain ଲାଗୁଛି, encourage କର ଓ confidence ଦିଅ
 
-ADMISSION PROCESS:
-- Eligibility: Pass 10th standard (Matric / SSC)
-- How to apply: Apply online on DRIEMS official website
-- Selection: Merit-based / SSJAT counselling
+DRIEMS ETC ର ସମ୍ପୂର୍ଣ୍ଣ ତଥ୍ୟ (ଆବଶ୍ୟକ ଅନୁଯାୟୀ ବ୍ୟବହାର କର, ଏକ ସଙ୍ଗେ ସବୁ ନ କହ):
 
-COURSE FEE:
-- Total: Rs. 65,000 for the full 3-year diploma programme
-- Payment: Two equal installments (flexible)
+COURSE:
+- ୩ ବର୍ଷ Diploma in Electronics & Telecommunication Engineering (ETC)
+- ମାତ୍ର ୬୦ ଆସନ — seats limited ଅଛି, ଶୀଘ୍ର apply କରିବା ଭଲ
+- AICTE Autonomous 2026 — ଓଡ଼ିଶାର ପ୍ରଥମ private polytechnic ଯାହାକୁ autonomous status ମିଳିଛି
 
-HOSTEL FACILITY:
-- Hostel fee: Rs. 75,000 (one-time)
-- FREE transportation from: Bhubaneswar, Cuttack, Jajpur, Chandikhol
+ADMISSION:
+- SAMS Portal ମାଧ୍ୟମରେ admission — odishasams.nic.in ରେ online apply କରାଯାଏ
+- ୧୦ ମ (Matric) pass ହେଲେ directly apply କରିହେବ — କୌଣସି entrance exam ଦରକାର ନାହିଁ
+- Merit basis ରେ admission ହୁଏ
 
-CAMPUS FACILITIES:
-- 100-acre green campus
-- Free Wi-Fi across the entire campus
-- Modern labs, workshops, seminar halls
+FEES:
+- Course fee: ବାର୍ଷିକ ୭୦,୦୦୦ ଟଙ୍କା — ୨ ଟି installment ରେ ଦେଇ ହେବ, ଏକ ଥରରେ ସବୁ ଦେବାକୁ ପଡ଼ିବ ନାହିଁ
+- Hostel fee: ବାର୍ଷିକ ୭୫,୦୦୦ ଟଙ୍କା — ଏଥିରେ food ଓ lodging ସବୁ included ଅଛି, ଆଲଗା ଖର୍ଚ୍ଚ ନାହିଁ
 
-PLACEMENTS:
-- Top companies: Centum Electronics, Cummins India, Voltas, and many more core companies
-- Strong placement record for ETC graduates
-- Industry-oriented training included in curriculum
+FACILITIES:
+- 24x7 WiFi campus — ଯେତେବେଳେ ଦରକାର internet ଉପଲବ୍ଧ
+- Advanced lab — real time hardware ଓ software projects
+- AI based projects ଓ dedicated IIC (Innovation, Incubation & Collaboration) lab — students innovative ହୋଇ project ତିଆରି କରିପାରିବେ
+- IIT Bombay Virtual Lab access
+- Hostel facility — boys ଓ girls ଉଭୟଙ୍କ ପାଇଁ
 
-WHY ETC IS THE BEST BRANCH:
-- Unique dual advantage: learn BOTH hardware AND software in one branch
-- Hardware: VLSI design, Embedded Systems, IoT hardware
-- Software: Python for IoT projects, real-time coding
-- Real-time industrial knowledge = stronger placement readiness
-- ETC is the FUTURE branch:
-    * 6G communication technology
-    * Satellite communication
-    * Optical fibre technology
-    * IoT and smart city infrastructure
-- Civil and Computer Science are good, but ETC has the widest future scope
-- ETC students can work in both IT companies AND core electronics companies
+ACADEMICS:
+- Subjects: VLSI Design, Embedded Systems, IoT, 5G Networks, Fiber Optics, Embedded C, Python
+- Principal ଓ Director ନିଜେ ECE domain ରୁ — experienced faculty ଯେଉଁମାନେ ETC students କୁ personally care କରନ୍ତି
+- Real time industry projects, hardware ଓ software দোনো
+
+PLACEMENT:
+- ୧୦୦% placement record
+- Infosys, TCS, Wipro, L&T, BHEL, BSNL ସିଧା campus ରୁ recruit କରନ୍ତି
+
+LOCATION:
+- Tangi, Cuttack — Bhubaneswar ଠାରୁ ୪୫ minutes, Cuttack city ଠାରୁ ୨୦ minutes
 
 CONTACT:
-- Visit DRIEMS campus, Tangi, Cuttack, Odisha
-- Phone: 0671-2595062 / 9438065742
-`;
+- Phone: 0671-2595062
+- Email: driemsdiploma@driems.ac.in
 
-// ──────────────────────────────────────────────────────────
-//  SYSTEM PROMPTS  (English + Odia — used by web UI)
-// ──────────────────────────────────────────────────────────
-const SYS_EN = `You are Arjun, a friendly enthusiastic admission counsellor at DRIEMS Polytechnic (Autonomous), Tangi, Cuttack, Odisha. Speak naturally and warmly like a real person. Expert in Electronics & Telecommunication Engineering (ETC) branch.
+Phone call ନିୟମ — ଏଗୁଡ଼ିକ ସର୍ବଦା ମାନ:
+- ୨-୩ ଛୋଟ ବାକ୍ୟ ଦିଅ — ଏହା phone call, essay ନୁହେଁ
+- caller ଯାହା ପଚାରିଛି ଠିକ୍ ତାହା ଉତ୍ତର ଦିଅ, ଅଦରକାରୀ info ଦିଅ ନାହିଁ
+- ଶେଷରେ ଗୋଟିଏ relevant follow-up ପ୍ରଶ୍ନ ପଚାର
+- Markdown, bullet, asterisk ବ୍ୟବହାର କର ନାହିଁ — pure spoken Odia
+SCHOLARSHIP:
+- SC, ST, OBC category students ku government scholarship miliba — fees re help heba
 
-PERSONALITY: Warm, encouraging. Short clear sentences. No bullet points. Ask questions to engage.
+COLLEGE VISIT:
+- College dekhibaku asibaku swagat — aaau aagaru 0671-2595062 re call karanti, seta bhala heba
 
-${KNOWLEDGE_BASE}
+SAMPLE CONVERSATIONS — exactly ehi style re respond kar:
 
-INSTRUCTIONS: 2-4 sentences per reply. Enthusiastically highlight ETC. No markdown. End with a question sometimes. Unknown questions → website or 0671-2595062.`;
+Caller: admission kana bhabi heba
+Priya: SAMS portal re online apply karibaku heba, odishasams.nic.in. Class 10 pass hele direct eligible, kono entrance exam nahi. Aapana ki already matric pass karichi?
 
-const SYS_OR = `ଆପଣ ଅର୍ଜୁନ, DRIEMS Polytechnic (Autonomous), ତଙ୍ଗି, କଟକ, ଓଡ଼ିଶା ର ଉତ୍ସାହୀ admission counsellor। ଓଡ଼ିଆ ଭାଷାରେ ସ୍ୱାଭାବିକ ଓ ଉଷ୍ଣ ଭାବରେ କଥା ହୁଅନ୍ତୁ।
+Caller: fees kana lagiba
+Priya: Course fee barshika 70,000 tanka, du ti installment re diya heba. Hostel neba hele 75,000 tanka, eta re khana pia lodging sab included. Aapana hostel neba ki neba nahi?
 
-ବ୍ୟକ୍ତିତ୍ୱ: ସ୍ୱଳ୍ପ ସ୍ପଷ୍ଟ ବାକ୍ୟ। Bullet points ନୁହେଁ।
+Caller: scholarship achi ki
+Priya: Haan, SC, ST, OBC category ra students mananka paine government scholarship available achi, fees re bohut help heba. Aapana kana category re achanti?
 
-${KNOWLEDGE_BASE}
+Caller: placement guarantee achi ki
+Priya: Ama ra 100 pratishat placement record achi har barsha. Infosys, TCS, Wipro, L&T, BHEL, BSNL sidha campus ru recruit karaniti. Aapananka ETC diploma sesh hele job ready heba nischit.
 
-ନିର୍ଦ୍ଦେଶ: ୨-୪ ବାକ୍ୟ। ETC ର ଶକ୍ତି ଦେଖାନ୍ତୁ। Markdown ନୁହେଁ। ଅଜଣା ପ୍ରଶ୍ନ → 0671-2595062।`;
+Caller: college kana kana subject padhauchhi
+Priya: VLSI Design, Embedded Systems, IoT, Satellite Communication, Optical Engineering, Python programming — sab advanced industry level subjects. Real time hardware software projects bi karajauchhi. Aapananka kana subject re interest achi?
 
-// ──────────────────────────────────────────────────────────
-//  SYSTEM PROMPT  (for Twilio voice calls)
-// ──────────────────────────────────────────────────────────
-const VOICE_SYSTEM_PROMPT = `You are Arjun, a warm and enthusiastic voice admissions counsellor for DRIEMS Polytechnic, promoting the Electronics and Telecommunication Engineering (ETC) branch in Cuttack, Odisha.
+Caller: hostel achi ki
+Priya: Haan, boys r girls duana paine hostel achi. Barshika 75,000 tanka re khana pia sab mile, alag kharch nahi. Campus re 24 ghanta WiFi bi achi. Aapana ki bahari ru asanti?
 
-LANGUAGE: Respond in simple conversational Odia (romanised transliteration). Keep sentences short — this is a phone call.
+Caller: college kahaan achi
+Priya: DRIEMS Polytechnic Tangi re achi, Cuttack jilla. Bhubaneswar ru 45 minute r Cuttack city ru matra 20 minute. Aapana kaharu asanti?
 
-INTENT DETECTION — answer ONLY what the caller asks:
-1. GREETING        → Introduce yourself, ask how you can help
-2. ADMISSION       → 10th pass eligible, apply online on DRIEMS website
-3. COURSE FEE      → sixty five thousand rupees in two installments
-4. HOSTEL          → seventy five thousand rupees, free transport from Bhubaneswar, Cuttack, Jajpur, Chandikhol
-5. CAMPUS          → hundred acre green campus, free Wi-Fi, modern labs
-6. PLACEMENTS      → Centum Electronics, Cummins, Voltas, core companies
-7. WHY ETC         → Both hardware and software, VLSI, Embedded, Python, 6G future
-8. GOODBYE         → Warm farewell, invite to visit campus
+Caller: college dekhibaku asibaku pariba ki
+Priya: Bilkul swagat achi aapananka. Aaau aagaru ekbar 0671-2595062 re call karanti jate proper guidance miliba. Aapana kahebe asibaku sochuchi?
 
-STRICT RULES:
-- Maximum 3 short sentences per reply
-- NEVER repeat what you already said
-- Speak numbers as words
-- Do NOT invent facts
+Caller: interested nahi
+Priya: Theek achi, samaya deibapaain dhanyabad. Jadi kabebe kichi janibaku chahanti, 0671-2595062 re call karantu. Shubha heu!
 
-${KNOWLEDGE_BASE}`;
+Caller: aaur kichi jaaniba
+Priya: Bilkul, kichi bi puchha karantu, mu achi. Fees, hostel, admission, placement — jekar bhi bisayare janibaku chahanti kahanti.
 
-// ──────────────────────────────────────────────────────────
-//  TWILIO VOICE SESSION STORE
-// ──────────────────────────────────────────────────────────
-const sessions = {};
+Caller: ETC branch future re kete scope achi
+Priya: Electronics r Telecommunication ebe bohut scope achi — 5G, IoT, satellite, embedded systems sab expand heuachi. Diploma pare directly job miliba ba further study bi kariheba. Aapana job paine interested naki higher study?
 
-function getHistory(callSid) { return sessions[callSid] || []; }
+Caller: principal r faculty kana experience achi
+Priya: Ama ra Principal r Director duana ECE domain ru — bohut experienced. Seinku ETC students upare special care achi, personally guide karaniti. Ata chota batch, matra 60 seats, tate personal attention miliba nischit.`;
 
-function saveTurn(callSid, role, content) {
-  if (!sessions[callSid]) sessions[callSid] = [];
-  sessions[callSid].push({ role, content });
-  if (sessions[callSid].length > 8)
-    sessions[callSid] = sessions[callSid].slice(-8);
-}
+const SYS_EN = `You are Priya — an experienced admission counsellor at DRIEMS Polytechnic (Autonomous), Tangi, Cuttack, Odisha. You are on a phone call with a student or parent.
 
-function clearSession(callSid) { delete sessions[callSid]; }
+Your personality:
+- Confident, warm, natural — like a caring older sister giving honest advice
+- Use phrases like "Absolutely", "Great question", "See, the thing is", "Let me tell you"
+- Answer exactly what the caller asked — never give robotic or scripted-sounding replies
+- If the caller sounds unsure, encourage them genuinely
 
-// ──────────────────────────────────────────────────────────
-//  SARVAM TTS  — shared by both UI and voice routes
-// ──────────────────────────────────────────────────────────
-async function sarvamTTS(text, lang = "or") {
-  const langCode = "od-IN";  // always Odia
-  const speaker  = "meera";  // best Odia voice on Sarvam
+Complete DRIEMS ETC information (use as needed, don't dump everything at once):
 
-  const response = await axios.post(
-    "https://api.sarvam.ai/text-to-speech",
-    {
-      inputs: [text],
+COURSE:
+- 3-year Diploma in Electronics & Telecommunication Engineering (ETC)
+- Only 60 seats — limited, early application is recommended
+- AICTE Autonomous 2026 — first private polytechnic in Odisha to get autonomous status
+
+ADMISSION:
+- Admission through SAMS Portal — apply online at odishasams.nic.in
+- Direct admission after Class 10 (Matric) — no entrance exam required
+- Merit-based selection
+
+FEES:
+- Course fee: Rs. 70,000 per year — can be paid in 2 instalments, no need to pay all at once
+- Hostel fee: Rs. 75,000 per year — fully inclusive of food and lodging, no hidden charges
+
+FACILITIES:
+- 24x7 WiFi campus
+- Advanced labs — real-time hardware and software projects
+- AI-based projects and dedicated IIC (Innovation, Incubation & Collaboration) lab
+- IIT Bombay Virtual Lab access
+- Hostel for both boys and girls
+
+ACADEMICS:
+- Subjects: VLSI Design, Embedded Systems, IoT, 5G Networks, Fiber Optics, Embedded C, Python
+- Principal and Director both from ECE domain — highly experienced, personally invested in ETC students
+- Real-time industry projects in both hardware and software
+
+PLACEMENT:
+- 100% placement record every year
+- Infosys, TCS, Wipro, L&T, BHEL, BSNL recruit directly from campus
+
+LOCATION:
+- Tangi, Cuttack — 45 mins from Bhubaneswar, 20 mins from Cuttack city
+
+CONTACT:
+- Phone: 0671-2595062
+- Email: driemsdiploma@driems.ac.in
+
+Phone call rules — always follow these:
+- Max 2-3 short sentences per reply — this is a phone call, not a brochure
+- Answer exactly what was asked, nothing extra
+- End with one relevant follow-up question
+- No markdown, no bullet points — pure natural spoken English only
+SCHOLARSHIP:
+- Government scholarship available for SC, ST, OBC category students
+
+COLLEGE VISIT:
+- Visitors are welcome — advise them to call 0671-2595062 before visiting
+
+SAMPLE CONVERSATIONS — follow exactly this style:
+
+Caller: how to apply
+Priya: You apply through the SAMS Portal online at odishasams.nic.in. No entrance exam needed — just Class 10 pass makes you eligible. Have you already completed your matric?
+
+Caller: what are the fees
+Priya: Course fee is 70,000 rupees per year, payable in two instalments. Hostel is 75,000 per year and that includes all meals and lodging, no hidden charges. Will you need hostel accommodation?
+
+Caller: is scholarship available
+Priya: Yes, government scholarship is available for SC, ST and OBC category students, which helps significantly with the fees. Which category do you belong to?
+
+Caller: is placement guaranteed
+Priya: We have 100 percent placement every year. Infosys, TCS, Wipro, L&T, BHEL and BSNL all recruit directly from our campus. You will be job ready by the time you complete the diploma.
+
+Caller: what subjects are taught
+Priya: VLSI Design, Embedded Systems, IoT, Satellite Communication, Optical Engineering and Python for IoT development — all advanced industry level. Students also do real time hardware and software projects. Any specific area you are interested in?
+
+Caller: is hostel available
+Priya: Yes, separate hostels for boys and girls. 75,000 per year covers food and lodging completely. Campus also has 24x7 WiFi. Are you coming from outside Cuttack?
+
+Caller: where is the college
+Priya: DRIEMS Polytechnic is in Tangi, Cuttack district — just 45 minutes from Bhubaneswar and 20 minutes from Cuttack city. Where are you travelling from?
+
+Caller: can I visit the college
+Priya: Absolutely, you are most welcome. Please call us at 0671-2595062 before coming so we can arrange proper guidance for you. When are you thinking of visiting?
+
+Caller: not interested
+Priya: That is perfectly fine, thank you for your time. If you ever have questions later, please call us at 0671-2595062. Have a wonderful day!
+
+Caller: what is the scope of ETC
+Priya: Electronics and Telecommunication has huge scope right now — 5G, IoT, satellite systems, embedded tech are all growing fast. After this diploma you can get a job directly or go for higher studies. Are you looking at jobs or further study?
+
+Caller: tell me about faculty
+Priya: Our Principal and Director are both from the ECE domain with years of experience. They personally care about ETC students. With only 60 seats it is a small batch, so every student gets individual attention.`;
+
+// ══════════════════════════════════════════════════════════════════════════
+//  PRE-BAKED SCRIPTS
+//  These are Priya's exact words for key moments — edit freely
+// ══════════════════════════════════════════════════════════════════════════
+const TEXTS = {
+  or: {
+    greet: 'ନମସ୍କାର, ମୁଁ ପ୍ରିୟା, DRIEMS Polytechnic College ରୁ call କରୁଛି। ଆପଣ Diploma admission ପାଇଁ interested ଅଛନ୍ତି କି? ଆମର AICTE approved, India ର first autonomous institution। ETC branch ରେ ୧୦୦ ପ୍ରତିଶତ placement ମିଳୁଛି। VLSI, Embedded Systems, Satellite Communication, Optical Engineering ଓ Python ଭଳି advanced subjects ପଢ଼ାଯାଏ। Electronics ହେଉଛି future, ଯଦି admission ପାଇଁ interested ଅଛନ୍ତି, ତେବେ ଆମ HoD of Electronics and Communication Engineering ଙ୍କ ସହ ସିଧା କଥା ହୋଇ ପାରିବେ।',
+    nudge: 'ଆପଣ ଶୁଣୁଛନ୍ତି ତ? DRIEMS ETC admission ବିଷୟରେ କିଛି ଜାଣିବାକୁ ଚାହୁଁଛନ୍ତି କି?',
+    bye:   'ଧନ୍ୟବାଦ ଆପଣଙ୍କୁ! ଯଦି ପରେ କିଛି ଜାଣିବାକୁ ଚାହିଁବେ, 0671-2595062 ରେ call କରନ୍ତୁ। ଶୁଭ ହେଉ!',
+    sorry: 'ଦୁଃଖିତ, ଠିକ୍ ଶୁଣିହେଲା ନାହିଁ। ଆଉ ଥରେ କହିବେ କି?'
+  },
+  en: {
+    greet: 'Hello! This is Priya calling from DRIEMS Polytechnic, Cuttack. I wanted to share some information about our Electronics and Telecommunication Engineering diploma program. Do you have a couple of minutes to talk?',
+    nudge: 'Are you there? I am here to help with any questions about DRIEMS ETC admission.',
+    bye:   'Thank you so much for your time! If you have any questions later, please call us at 0671-2595062. Have a wonderful day!',
+    sorry: 'Sorry, I could not catch that clearly. Could you please say that again?'
+  }
+};
+
+const BYE_WORDS = ['bye','goodbye','no thank','not interested','later','ଠିକ ଅଛି','ଧନ୍ୟବାଦ','ବିଦାୟ','ରଖ','ଭଲ ଅଛି','ଆଉ ନାହିଁ','ପରେ'];
+
+// ── In-memory stores ──────────────────────────────────────────────────────────
+const audioStore = new Map();
+const callStore  = new Map();
+const jobStore   = new Map();
+
+setInterval(() => {
+  const cut = Date.now() - 900000;
+  for (const [k,v] of audioStore) if (v.ts < cut) audioStore.delete(k);
+  for (const [k,v] of jobStore)   if (v.ts < cut) jobStore.delete(k);
+}, 600000);
+
+// ══════════════════════════════════════════════════════════════════════════
+//  TTS — Sarvam AI (primary) → Google Cloud TTS (fallback)
+//
+//  VOICE SELECTION:
+//  Odia  → "manisha" — most natural native Odia female speaker in Sarvam
+//  English → "priya" — warm Indian English female voice
+//  If manisha sounds unnatural, try "vidya" as alternative
+// ══════════════════════════════════════════════════════════════════════════
+async function sarvamTTS(text, lang, forPhone = true) {
+  if (!SARVAM_KEY) throw new Error('SARVAM_API_KEY is not set');
+
+  const langCode   = lang === 'or' ? 'od-IN' : 'en-IN';
+  const speaker    = lang === 'or' ? 'manisha' : 'priya';  // manisha = natural Odia female
+  const sampleRate = forPhone ? 8000 : 22050;
+
+  const r = await fetch('https://api.sarvam.ai/text-to-speech', {
+    method:  'POST',
+    headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      inputs:               [text.replace(/[*_`#]/g, '').trim()],
       target_language_code: langCode,
       speaker,
-      pitch: 0,
-      pace: 1.05,
-      loudness: 1.5,
-      speech_sample_rate: 8000,        // telephony optimised
+      model:                'bulbul:v2',
+      pitch:                0,
+      pace:                 0.85,  // slightly slow = clear, natural Odia speech
+      loudness:             1.5,
+      speech_sample_rate:   sampleRate,
       enable_preprocessing: true,
-      model: "bulbul:v2",
-    },
+      output_format:        'wav'
+    })
+  });
+
+  if (!r.ok) {
+    const errBody = await r.text();
+    console.error(`Sarvam TTS error ${r.status}:`, errBody);
+    throw new Error(`Sarvam TTS ${r.status}: ${errBody}`);
+  }
+
+  const json = await r.json();
+  const b64  = json.audios?.[0];
+  if (!b64) throw new Error('Sarvam TTS: no audio in response');
+  return Buffer.from(b64, 'base64');
+}
+
+async function googleCloudTTS(text, lang, forPhone = true) {
+  if (!GOOGLE_TTS_KEY) throw new Error('GOOGLE_TTS_KEY is not set');
+
+  const voiceMap = {
+    or: { languageCode: 'or-IN', name: 'or-IN-Standard-A', ssmlGender: 'FEMALE' },
+    en: { languageCode: 'en-IN', name: 'en-IN-Neural2-A',  ssmlGender: 'FEMALE' }
+  };
+  const voice         = voiceMap[lang] || voiceMap.en;
+  const sampleRate    = forPhone ? 8000 : 22050;
+  const audioEncoding = forPhone ? 'LINEAR16' : 'MP3';
+
+  const r = await fetch(
+    `https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TTS_KEY}`,
     {
-      headers: {
-        "api-subscription-key": SARVAM_API_KEY,
-        "Content-Type": "application/json",
-      },
-      timeout: 10000,
-      responseType: "json",
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        input:       { text: text.replace(/[*_`#]/g, '').trim() },
+        voice,
+        audioConfig: { audioEncoding, sampleRateHertz: sampleRate, speakingRate: 1.0 }
+      })
     }
   );
 
-  const b64Audio = response.data?.audios?.[0];
-  if (!b64Audio) throw new Error("Sarvam returned no audio");
-  return Buffer.from(b64Audio, "base64");
+  if (!r.ok) {
+    const errBody = await r.text();
+    console.error(`Google Cloud TTS error ${r.status}:`, errBody);
+    throw new Error(`Google Cloud TTS ${r.status}: ${errBody}`);
+  }
+
+  const json = await r.json();
+  if (!json.audioContent) throw new Error('Google Cloud TTS: no audio in response');
+  return Buffer.from(json.audioContent, 'base64');
 }
 
-// ──────────────────────────────────────────────────────────
-//  STATIC FILES  (serves public/index.html as the UI)
-// ──────────────────────────────────────────────────────────
-app.use(express.static(path.join(__dirname, "public")));
-app.use("/audio", express.static(AUDIO_DIR));
-
-// ──────────────────────────────────────────────────────────
-//  API: /api/tts  — used by the web UI to play Arjun's voice
-// ──────────────────────────────────────────────────────────
-app.post("/api/tts", async (req, res) => {
-  const { text, lang = "or" } = req.body;
-  if (!text) return res.status(400).json({ error: "No text provided" });
-
+async function makeTTS(text, lang, forPhone = true) {
+  const clean = text.replace(/[*_`#\n]/g, ' ').replace(/\s+/g, ' ').trim();
   try {
-    const audioBuffer = await sarvamTTS(text, lang);
-    res.set("Content-Type", "audio/wav");
-    res.send(audioBuffer);
-  } catch (err) {
-    console.error("TTS error:", err.response?.data || err.message);
-    res.status(500).json({ error: "TTS failed", detail: err.message });
-  }
-});
-
-// ──────────────────────────────────────────────────────────
-//  API: /api/chat  — used by the web UI chat window
-// ──────────────────────────────────────────────────────────
-app.post("/api/chat", async (req, res) => {
-  const { system, messages } = req.body;
-  if (!messages) return res.status(400).json({ error: "No messages" });
-
-  try {
-    const response = await claude.messages.create({
-      model: "claude-haiku-4-5",
-      max_tokens: 200,
-      system: system || SYS_OR,
-      messages,
-    });
-    res.json(response);
-  } catch (err) {
-    console.error("Claude error:", err.message);
-    res.status(500).json({ error: "Claude API failed", detail: err.message });
-  }
-});
-
-// ──────────────────────────────────────────────────────────
-//  API: /api/outbound-call  — Twilio outbound calling
-// ──────────────────────────────────────────────────────────
-app.post("/api/outbound-call", async (req, res) => {
-  const { phone, lang = "or" } = req.body;
-  if (!phone) return res.status(400).json({ error: "Phone number required" });
-
-  try {
-    const call = await twilioClient.calls.create({
-      to: phone,
-      from: TWILIO_PHONE_NUMBER,
-      url: `${PUBLIC_URL}/voice?lang=${lang}`,
-      method: "POST",
-    });
-    res.json({ callSid: call.sid, status: call.status });
-  } catch (err) {
-    console.error("Outbound call error:", err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ──────────────────────────────────────────────────────────
-//  API: /api/call-status/:sid  — poll call status
-// ──────────────────────────────────────────────────────────
-app.get("/api/call-status/:sid", async (req, res) => {
-  try {
-    const call = await twilioClient.calls(req.params.sid).fetch();
-    res.json({ status: call.status, duration: call.duration });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ──────────────────────────────────────────────────────────
-//  TWILIO VOICE WEBHOOKS
-// ──────────────────────────────────────────────────────────
-
-async function getVoiceReply(callSid, userText) {
-  saveTurn(callSid, "user", userText);
-  const history = getHistory(callSid);
-  try {
-    const response = await claude.messages.create({
-      model: "claude-haiku-4-5",
-      max_tokens: 150,
-      system: VOICE_SYSTEM_PROMPT,
-      messages: history,
-    });
-    const reply = response.content[0].text.trim();
-    saveTurn(callSid, "assistant", reply);
-    return reply;
-  } catch (err) {
-    console.error("Claude voice error:", err.message);
-    return "Sorry, I had a small issue. Please ask your question again.";
+    return await sarvamTTS(clean, lang, forPhone);
+  } catch (e) {
+    console.warn(`Sarvam failed (${e.message}), falling back to Google Cloud TTS...`);
+    return await googleCloudTTS(clean, lang, forPhone);
   }
 }
 
-async function buildVoiceTwiml(text, actionUrl) {
-  const VoiceResponse = twilio.twiml.VoiceResponse;
-  const vr = new VoiceResponse();
+async function storeAudio(text, lang, forPhone = true) {
+  const buf = await makeTTS(text, lang, forPhone);
+  const id  = uuidv4();
+  audioStore.set(id, { buf, ts: Date.now() });
+  return id;
+}
 
-  let audioUrl = null;
+app.get('/audio/:id', (req, res) => {
+  const e = audioStore.get(req.params.id);
+  if (!e) return res.status(404).send('Not found');
+  res.set('Content-Type', 'audio/wav').set('Cache-Control', 'no-store').send(e.buf);
+});
+
+// ── Web chat: /api/tts ────────────────────────────────────────────────────────
+app.post('/api/tts', async (req, res) => {
+  const { text, lang } = req.body;
+  if (!text?.trim()) return res.status(400).json({ error: 'No text' });
   try {
-    const audioBuffer = await sarvamTTS(text, "or");
-    const filename = `${uuidv4()}.wav`;
-    fs.writeFileSync(path.join(AUDIO_DIR, filename), audioBuffer);
-    audioUrl = `${PUBLIC_URL}/audio/${filename}`;
-  } catch (err) {
-    console.error("TTS failed, using Twilio fallback:", err.message);
+    const buf = await makeTTS(text.replace(/[*_`#\n]/g, ' ').trim(), lang || 'en', false);
+    res.set('Content-Type', 'audio/wav').set('Cache-Control', 'no-store').send(buf);
+  } catch (e) {
+    console.error('TTS error:', e.message);
+    res.status(500).json({ error: e.message });
   }
+});
 
-  if (actionUrl) {
-    const gather = vr.gather({
-      input: "speech",
-      action: actionUrl,
-      method: "POST",
-      timeout: 5,
-      speechTimeout: "auto",
-      language: "hi-IN",
-      hints: "admission fee hostel placement ETC campus apply",
+// ── Web chat: /api/chat ───────────────────────────────────────────────────────
+app.post('/api/chat', async (req, res) => {
+  const { messages, system } = req.body;
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': ANTH_KEY, 'anthropic-version': '2023-06-01' },
+      body:    JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 300, system, messages })
     });
-    if (audioUrl) gather.play(audioUrl);
-    else gather.say({ voice: "Polly.Aditi", language: "en-IN" }, text);
-    vr.redirect({ method: "POST" }, actionUrl);
-  } else {
-    if (audioUrl) vr.play(audioUrl);
-    else vr.say({ voice: "Polly.Aditi", language: "en-IN" }, text);
-    vr.hangup();
-  }
+    res.json(await r.json());
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
+// ── Claude reply for phone ────────────────────────────────────────────────────
+async function claudeReply(history, lang) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': ANTH_KEY, 'anthropic-version': '2023-06-01' },
+    body:    JSON.stringify({
+      model:      'claude-haiku-4-5-20251001',
+      max_tokens: 120,
+      system:     lang === 'or' ? SYS_OR : SYS_EN,
+      messages:   history
+    })
+  });
+  const d = await r.json();
+  return d.content?.[0]?.text || TEXTS[lang]?.sorry || 'Sorry.';
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  ASYNC JOB SYSTEM
+// ══════════════════════════════════════════════════════════════════════════
+function startJob(jobId, speech, callSid, lang) {
+  jobStore.set(jobId, { status: 'pending', audioId: null, ts: Date.now() });
+  (async () => {
+    try {
+      const state = callStore.get(callSid) || { history: [], lang };
+      state.history.push({ role: 'user', content: speech });
+      const reply = await claudeReply(state.history, lang);
+      state.history.push({ role: 'assistant', content: reply });
+      if (state.history.length > 16) state.history = state.history.slice(-16);
+      callStore.set(callSid, state);
+      const audioId = await storeAudio(reply, lang, true);
+      jobStore.set(jobId, { status: 'done', audioId, ts: Date.now() });
+    } catch (e) {
+      console.error(`Job ${jobId} error:`, e.message);
+      jobStore.set(jobId, { status: 'error', audioId: null, ts: Date.now() });
+    }
+  })();
+}
+
+function gatherTwiML(audioId, action, glang) {
+  const vr = new twilio.twiml.VoiceResponse();
+  const g  = vr.gather({
+    input: 'speech', action, method: 'POST',
+    language: glang, speechTimeout: 'auto', timeout: '10',
+    actionOnEmptyResult: true
+  });
+  if (audioId) g.play(`${PUBLIC_URL}/audio/${audioId}`);
+  g.pause({ length: 1 });
+  vr.redirect({ method: 'POST' }, action + '&noInput=1');
   return vr.toString();
 }
 
-// Entry point when call connects
-app.post("/voice", async (req, res) => {
-  const callSid = req.body.CallSid || "unknown";
-  clearSession(callSid);
+// ══════════════════════════════════════════════════════════════════════════
+//  OUTBOUND CALL
+// ══════════════════════════════════════════════════════════════════════════
+app.post('/api/outbound-call', async (req, res) => {
+  const { phone, lang = 'or' } = req.body;
+  if (!phone)                         return res.status(400).json({ error: 'Phone number required' });
+  if (!phone.startsWith('+'))         return res.status(400).json({ error: 'Use format: +91XXXXXXXXXX' });
+  if (!TW_SID || !TW_TOKEN || !TW_FROM) return res.status(500).json({ error: 'Twilio credentials missing' });
+  if (!PUBLIC_URL)                    return res.status(500).json({ error: 'PUBLIC_URL not set' });
 
-  const greeting = await getVoiceReply(
-    callSid,
-    "A new caller just connected. Greet them warmly as Arjun and ask how you can help."
-  );
-  console.log(`[${callSid}] GREETING → ${greeting.slice(0, 80)}`);
+  try {
+    const t = TEXTS[lang] || TEXTS.or;
+    console.log(`Pre-generating audio for ${phone} (${lang})...`);
 
-  const twiml = await buildVoiceTwiml(greeting, `${PUBLIC_URL}/respond`);
-  res.type("text/xml").send(twiml);
+    const [greetId, nudgeId, sorryId] = await Promise.all([
+      storeAudio(t.greet, lang, true),
+      storeAudio(t.nudge, lang, true),
+      storeAudio(t.sorry, lang, true)
+    ]);
+
+    const client = twilio(TW_SID, TW_TOKEN);
+    const call   = await client.calls.create({
+      to:     phone,
+      from:   TW_FROM,
+      url:    `${PUBLIC_URL}/call/start?lang=${lang}&g=${greetId}&n=${nudgeId}&s=${sorryId}`,
+      method: 'POST',
+      statusCallback:       `${PUBLIC_URL}/call/status`,
+      statusCallbackMethod: 'POST'
+    });
+
+    callStore.set(call.sid, {
+      history: [{ role: 'assistant', content: t.greet }],
+      lang, nudgeId, sorryId
+    });
+
+    console.log(`Dialing — SID: ${call.sid}`);
+    res.json({ success: true, callSid: call.sid, status: call.status });
+  } catch (e) {
+    console.error('Outbound call error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
 });
 
-// Every caller utterance
-app.post("/respond", async (req, res) => {
-  const callSid    = req.body.CallSid || "unknown";
-  const userSpeech = (req.body.SpeechResult || "").trim();
-  const confidence = parseFloat(req.body.Confidence || 0);
+// ── /call/start ───────────────────────────────────────────────────────────────
+app.post('/call/start', async (req, res) => {
+  const lang    = req.query.lang || 'or';
+  const greetId = req.query.g;
+  const callSid = req.body.CallSid;
+  const glang   = lang === 'or' ? 'or-IN' : 'en-IN';
+  const action  = `${PUBLIC_URL}/call/respond?lang=${lang}&sid=${callSid}`;
 
-  console.log(`[${callSid}] USER (${confidence.toFixed(2)}): "${userSpeech}"`);
+  console.log(`Call answered: ${callSid}`);
 
-  if (!userSpeech || confidence < 0.25) {
-    const nudge = "Sorry, I did not catch that. Could you please repeat your question?";
-    const twiml = await buildVoiceTwiml(nudge, `${PUBLIC_URL}/respond`);
-    return res.type("text/xml").send(twiml);
+  if (greetId && audioStore.has(greetId)) {
+    return res.type('text/xml').send(gatherTwiML(greetId, action, glang));
   }
 
-  const byeWords = ["bye", "goodbye", "thank you", "thanks", "no more", "that's all", "ok bye", "dhanyabad"];
-  if (byeWords.some(w => userSpeech.toLowerCase().includes(w))) {
-    const farewell = await getVoiceReply(
-      callSid,
-      "The caller said goodbye. Give a warm 2-sentence farewell and invite them to visit DRIEMS."
-    );
-    clearSession(callSid);
-    const twiml = await buildVoiceTwiml(farewell, null); // null = hangup after
-    return res.type("text/xml").send(twiml);
+  try {
+    const id = await storeAudio(TEXTS[lang].greet, lang, true);
+    res.type('text/xml').send(gatherTwiML(id, action, glang));
+  } catch (e) {
+    const vr = new twilio.twiml.VoiceResponse();
+    vr.say({ language: glang }, lang === 'or'
+      ? 'Namaskara, mun Priya, DRIEMS Polytechnic ru phone karuchu.'
+      : 'Hello, this is Priya from DRIEMS Polytechnic.');
+    vr.gather({ input: 'speech', action, method: 'POST', language: glang, timeout: '8' });
+    res.type('text/xml').send(vr.toString());
+  }
+});
+
+// ── /call/respond ─────────────────────────────────────────────────────────────
+app.post('/call/respond', async (req, res) => {
+  const lang    = req.query.lang || 'or';
+  const callSid = req.query.sid  || req.body.CallSid;
+  const speech  = (req.body.SpeechResult || '').trim();
+  const noInput = req.query.noInput === '1';
+  const glang   = lang === 'or' ? 'or-IN' : 'en-IN';
+  const action  = `${PUBLIC_URL}/call/respond?lang=${lang}&sid=${callSid}`;
+  const state   = callStore.get(callSid) || { nudgeId: null, sorryId: null };
+
+  console.log(`Speech [${callSid}]: "${speech}"`);
+
+  if (!speech || noInput) {
+    const vr = new twilio.twiml.VoiceResponse();
+    const g  = vr.gather({ input: 'speech', action, method: 'POST', language: glang, speechTimeout: 'auto', timeout: '10', actionOnEmptyResult: true });
+    if (state.nudgeId && audioStore.has(state.nudgeId)) g.play(`${PUBLIC_URL}/audio/${state.nudgeId}`);
+    g.pause({ length: 1 });
+    return res.type('text/xml').send(vr.toString());
   }
 
-  const reply = await getVoiceReply(callSid, userSpeech);
-  console.log(`[${callSid}] ARJUN → ${reply.slice(0, 100)}`);
+  if (BYE_WORDS.some(w => speech.toLowerCase().includes(w))) {
+    try {
+      const id = await storeAudio(TEXTS[lang]?.bye || 'Thank you. Goodbye!', lang, true);
+      const vr = new twilio.twiml.VoiceResponse();
+      vr.play(`${PUBLIC_URL}/audio/${id}`);
+      vr.pause({ length: 1 });
+      vr.hangup();
+      return res.type('text/xml').send(vr.toString());
+    } catch (e) {
+      const vr = new twilio.twiml.VoiceResponse();
+      vr.say({ language: glang }, 'Thank you. Goodbye!');
+      vr.hangup();
+      return res.type('text/xml').send(vr.toString());
+    }
+  }
 
-  const twiml = await buildVoiceTwiml(reply, `${PUBLIC_URL}/respond`);
-  res.type("text/xml").send(twiml);
+  const jobId = uuidv4();
+  startJob(jobId, speech, callSid, lang);
+
+  const vr = new twilio.twiml.VoiceResponse();
+  vr.pause({ length: 1 });
+  vr.redirect({ method: 'POST' }, `${PUBLIC_URL}/call/poll?j=${jobId}&lang=${lang}&sid=${callSid}&p=0`);
+  res.type('text/xml').send(vr.toString());
 });
 
-// ──────────────────────────────────────────────────────────
-//  HEALTH CHECK
-// ──────────────────────────────────────────────────────────
-app.get("/health", (req, res) => {
-  res.json({ status: "ok", bot: "Arjun — Sarvam TTS" });
+// ── /call/poll ────────────────────────────────────────────────────────────────
+app.post('/call/poll', async (req, res) => {
+  const jobId   = req.query.j    || '';
+  const lang    = req.query.lang || 'or';
+  const callSid = req.query.sid  || req.body.CallSid;
+  const polls   = parseInt(req.query.p || '0');
+  const glang   = lang === 'or' ? 'or-IN' : 'en-IN';
+  const action  = `${PUBLIC_URL}/call/respond?lang=${lang}&sid=${callSid}`;
+  const state   = callStore.get(callSid) || {};
+  const job     = jobStore.get(jobId);
+
+  if (job?.status === 'done' && job.audioId) {
+    console.log(`Job ${jobId} ready after ${polls} polls`);
+    return res.type('text/xml').send(gatherTwiML(job.audioId, action, glang));
+  }
+
+  if (job?.status === 'error') {
+    const vr = new twilio.twiml.VoiceResponse();
+    const g  = vr.gather({ input: 'speech', action, method: 'POST', language: glang, speechTimeout: 'auto', timeout: '10', actionOnEmptyResult: true });
+    if (state.sorryId && audioStore.has(state.sorryId)) g.play(`${PUBLIC_URL}/audio/${state.sorryId}`);
+    else g.say({ language: glang }, 'Sorry, please try again.');
+    g.pause({ length: 1 });
+    return res.type('text/xml').send(vr.toString());
+  }
+
+  if (polls >= 15) {
+    const vr = new twilio.twiml.VoiceResponse();
+    vr.gather({ input: 'speech', action, method: 'POST', language: glang, timeout: '10' });
+    return res.type('text/xml').send(vr.toString());
+  }
+
+  const vr = new twilio.twiml.VoiceResponse();
+  vr.pause({ length: 1 });
+  vr.redirect({ method: 'POST' }, `${PUBLIC_URL}/call/poll?j=${jobId}&lang=${lang}&sid=${callSid}&p=${polls + 1}`);
+  res.type('text/xml').send(vr.toString());
 });
 
-// ──────────────────────────────────────────────────────────
-//  START
-// ──────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`Arjun bot running on port ${PORT}`);
+// ── /call/status ──────────────────────────────────────────────────────────────
+app.post('/call/status', (req, res) => {
+  const { CallSid, CallStatus } = req.body;
+  console.log(`Status: ${CallSid} → ${CallStatus}`);
+  if (['completed','failed','busy','no-answer','canceled'].includes(CallStatus))
+    callStore.delete(CallSid);
+  res.sendStatus(200);
 });
+
+// ── /api/call-status/:sid ─────────────────────────────────────────────────────
+app.get('/api/call-status/:sid', async (req, res) => {
+  try {
+    const client = twilio(TW_SID, TW_TOKEN);
+    const call   = await client.calls(req.params.sid).fetch();
+    res.json({ status: call.status, duration: call.duration || 0 });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`DRIEMS Bot running on port ${PORT}`));
