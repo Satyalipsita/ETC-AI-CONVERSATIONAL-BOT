@@ -278,7 +278,7 @@ async function sarvamTTS(text, lang, forPhone = true) {
   if (!SARVAM_KEY) throw new Error('SARVAM_API_KEY is not set');
 
   const langCode   = lang === 'or' ? 'od-IN' : 'en-IN';
-  const speaker    = lang === 'or' ? 'suhani' : 'priya';   // suhani = natural female, bulbul:v3 compatible
+  const speaker    = lang === 'or' ? 'vidya' : 'anushka'; // vidya = native Odia female (v2 only)
   const sampleRate = forPhone ? 8000 : 22050;
 
   const r = await fetch('https://api.sarvam.ai/text-to-speech', {
@@ -288,9 +288,10 @@ async function sarvamTTS(text, lang, forPhone = true) {
       inputs:               [text.replace(/[*_`#]/g, '').trim()],
       target_language_code: langCode,
       speaker,
-      model:                'bulbul:v3',
+      model:                'bulbul:v2',
+      pitch:                0,
       pace:                 0.85,
-      temperature:          0.4,
+      loudness:             1.5,
       speech_sample_rate:   sampleRate,
       enable_preprocessing: true,
       output_format:        'wav'
