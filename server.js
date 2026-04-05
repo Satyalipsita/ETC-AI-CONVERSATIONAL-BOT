@@ -100,7 +100,7 @@ ${KNOWLEDGE_BASE}
 // ──────────────────────────────────────────────────────────
 const VOICE_SYSTEM_PROMPT = `You are Arjun, a warm and enthusiastic voice admissions counsellor for DRIEMS Polytechnic, promoting the Electronics and Telecommunication Engineering (ETC) branch in Cuttack, Odisha.
 
-LANGUAGE: Respond in simple conversational English. Keep sentences short — this is a phone call.
+LANGUAGE: Respond in simple conversational Odia (romanised transliteration). Keep sentences short — this is a phone call.
 
 INTENT DETECTION — answer ONLY what the caller asks:
 1. GREETING        → Introduce yourself, ask how you can help
@@ -140,8 +140,8 @@ function clearSession(callSid) { delete sessions[callSid]; }
 //  SARVAM TTS  — shared by both UI and voice routes
 // ──────────────────────────────────────────────────────────
 async function sarvamTTS(text, lang = "or") {
-  const langCode = lang === "or" ? "od-IN" : "en-IN";
-  const speaker  = lang === "or" ? "meera" : "meera"; // meera works for both
+  const langCode = "od-IN";  // always Odia
+  const speaker  = "meera";  // best Odia voice on Sarvam
 
   const response = await axios.post(
     "https://api.sarvam.ai/text-to-speech",
@@ -205,7 +205,7 @@ app.post("/api/chat", async (req, res) => {
     const response = await claude.messages.create({
       model: "claude-haiku-4-5",
       max_tokens: 200,
-      system: system || SYS_EN,
+      system: system || SYS_OR,
       messages,
     });
     res.json(response);
