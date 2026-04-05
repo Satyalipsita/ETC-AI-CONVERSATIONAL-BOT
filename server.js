@@ -248,6 +248,11 @@ function buildEndTwiml(audioUrl, fallbackText) {
 // Serve generated audio files to Twilio
 app.use("/audio", express.static(AUDIO_DIR));
 
+// Root route — browser check
+app.get("/", (req, res) => {
+  res.send("Arjun Bot is running ✅");
+});
+
 // Health check — UptimeRobot pings this
 app.get("/health", (req, res) => {
   res.json({ status: "ok", bot: "Arjun v2 — Sarvam TTS" });
