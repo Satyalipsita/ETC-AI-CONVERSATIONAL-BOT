@@ -12,16 +12,21 @@ const twilio     = require("twilio");
 //  SETUP
 // ──────────────────────────────────────────────────────────
 const app = express();
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());                          // for /api/* routes (UI)
+app.use(bodyParser.urlencoded({ extended: false })); // for Twilio webhooks
 
-const PORT          = process.env.PORT || 3000;
-const PUBLIC_URL    = (process.env.PUBLIC_URL || "").replace(/\/$/, "");
-const SARVAM_API_KEY = process.env.SARVAM_API_KEY;
-const AUDIO_DIR     = "/tmp/audio";
+const PORT             = process.env.PORT || 3000;
+const PUBLIC_URL       = (process.env.PUBLIC_URL || "").replace(/\/$/, "");
+const SARVAM_API_KEY   = process.env.SARVAM_API_KEY;
+const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
+const TWILIO_AUTH_TOKEN  = process.env.TWILIO_AUTH_TOKEN;
+const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
+const AUDIO_DIR        = "/tmp/audio";
 
 if (!fs.existsSync(AUDIO_DIR)) fs.mkdirSync(AUDIO_DIR, { recursive: true });
 
-const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const claude       = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const twilioClient = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 
 // ──────────────────────────────────────────────────────────
 //  KNOWLEDGE BASE
@@ -68,213 +73,256 @@ WHY ETC IS THE BEST BRANCH:
 
 CONTACT:
 - Visit DRIEMS campus, Tangi, Cuttack, Odisha
-- Call the admissions office for details
+- Phone: 0671-2595062 / 9438065742
 `;
 
 // ──────────────────────────────────────────────────────────
-//  SYSTEM PROMPT
+//  SYSTEM PROMPTS  (English + Odia — used by web UI)
 // ──────────────────────────────────────────────────────────
-const SYSTEM_PROMPT = `
-You are Arjun, a warm and enthusiastic voice admissions counsellor for DRIEMS Polytechnic,
-promoting the Electronics and Telecommunication Engineering (ETC) branch in Cuttack, Odisha.
+const SYS_EN = `You are Arjun, a friendly enthusiastic admission counsellor at DRIEMS Polytechnic (Autonomous), Tangi, Cuttack, Odisha. Speak naturally and warmly like a real person. Expert in Electronics & Telecommunication Engineering (ETC) branch.
 
-LANGUAGE RULES:
-- Respond BILINGUALLY: start with 1 sentence in Odia (romanised/transliterated Odia, NOT Odia script),
-  then continue in simple English
-- Example Odia opening: "Namaskara, mu Arjun, DRIEMS ra admissions counsellor"
-- Keep Odia romanised because Sarvam TTS reads romanised Odia text better on phone calls
-- Keep sentences short and natural — like a friendly local person talking
+PERSONALITY: Warm, encouraging. Short clear sentences. No bullet points. Ask questions to engage.
 
-INTENT DETECTION — identify what the caller wants and answer ONLY that:
-1. GREETING / WHO ARE YOU    → Introduce yourself warmly, ask what they want to know
-2. ADMISSION / HOW TO APPLY  → 10th pass eligible, apply online on DRIEMS website
-3. COURSE FEE                → Rs. 65,000 total, in two installments
-4. HOSTEL / ACCOMMODATION    → Rs. 75,000, free transport from Bhubaneswar, Cuttack, Jajpur, Chandikhol
-5. CAMPUS / FACILITIES       → 100-acre green campus, free Wi-Fi, modern labs
-6. PLACEMENTS / JOB SCOPE    → Centum Electronics, Cummins, Voltas, core companies
-7. WHY ETC / WHICH BRANCH    → Both hardware and software, VLSI, Embedded, Python, 6G future
-8. GENERAL ENQUIRY           → Answer strictly from the knowledge base
-9. GOODBYE / THANK YOU       → Warm farewell, invite to visit campus
+${KNOWLEDGE_BASE}
+
+INSTRUCTIONS: 2-4 sentences per reply. Enthusiastically highlight ETC. No markdown. End with a question sometimes. Unknown questions → website or 0671-2595062.`;
+
+const SYS_OR = `ଆପଣ ଅର୍ଜୁନ, DRIEMS Polytechnic (Autonomous), ତଙ୍ଗି, କଟକ, ଓଡ଼ିଶା ର ଉତ୍ସାହୀ admission counsellor। ଓଡ଼ିଆ ଭାଷାରେ ସ୍ୱାଭାବିକ ଓ ଉଷ୍ଣ ଭାବରେ କଥା ହୁଅନ୍ତୁ।
+
+ବ୍ୟକ୍ତିତ୍ୱ: ସ୍ୱଳ୍ପ ସ୍ପଷ୍ଟ ବାକ୍ୟ। Bullet points ନୁହେଁ।
+
+${KNOWLEDGE_BASE}
+
+ନିର୍ଦ୍ଦେଶ: ୨-୪ ବାକ୍ୟ। ETC ର ଶକ୍ତି ଦେଖାନ୍ତୁ। Markdown ନୁହେଁ। ଅଜଣା ପ୍ରଶ୍ନ → 0671-2595062।`;
+
+// ──────────────────────────────────────────────────────────
+//  SYSTEM PROMPT  (for Twilio voice calls)
+// ──────────────────────────────────────────────────────────
+const VOICE_SYSTEM_PROMPT = `You are Arjun, a warm and enthusiastic voice admissions counsellor for DRIEMS Polytechnic, promoting the Electronics and Telecommunication Engineering (ETC) branch in Cuttack, Odisha.
+
+LANGUAGE: Respond in simple conversational English. Keep sentences short — this is a phone call.
+
+INTENT DETECTION — answer ONLY what the caller asks:
+1. GREETING        → Introduce yourself, ask how you can help
+2. ADMISSION       → 10th pass eligible, apply online on DRIEMS website
+3. COURSE FEE      → sixty five thousand rupees in two installments
+4. HOSTEL          → seventy five thousand rupees, free transport from Bhubaneswar, Cuttack, Jajpur, Chandikhol
+5. CAMPUS          → hundred acre green campus, free Wi-Fi, modern labs
+6. PLACEMENTS      → Centum Electronics, Cummins, Voltas, core companies
+7. WHY ETC         → Both hardware and software, VLSI, Embedded, Python, 6G future
+8. GOODBYE         → Warm farewell, invite to visit campus
 
 STRICT RULES:
-- Keep each response to 3-4 short sentences MAXIMUM (this is a phone call)
-- NEVER repeat a sentence or idea you already said in this conversation
-- NEVER begin two replies with the same opening phrase
-- DO NOT use filler phrases like "Great question!" or "Absolutely!"
-- Speak numbers as words: "sixty five thousand rupees" not "Rs. 65,000"
-- Be enthusiastic and positive about ETC — it is the future!
-- If you do not know something, say: "Please visit DRIEMS campus or call our admissions office"
-- Do NOT invent any fact not in the knowledge base
+- Maximum 3 short sentences per reply
+- NEVER repeat what you already said
+- Speak numbers as words
+- Do NOT invent facts
 
-KNOWLEDGE BASE:
-${KNOWLEDGE_BASE}
-`;
+${KNOWLEDGE_BASE}`;
 
 // ──────────────────────────────────────────────────────────
-//  SESSION STORE
+//  TWILIO VOICE SESSION STORE
 // ──────────────────────────────────────────────────────────
 const sessions = {};
 
-function getHistory(callSid) {
-  return sessions[callSid] || [];
-}
+function getHistory(callSid) { return sessions[callSid] || []; }
 
 function saveTurn(callSid, role, content) {
   if (!sessions[callSid]) sessions[callSid] = [];
   sessions[callSid].push({ role, content });
-  // Keep last 8 turns only → lower latency
-  if (sessions[callSid].length > 8) {
+  if (sessions[callSid].length > 8)
     sessions[callSid] = sessions[callSid].slice(-8);
+}
+
+function clearSession(callSid) { delete sessions[callSid]; }
+
+// ──────────────────────────────────────────────────────────
+//  SARVAM TTS  — shared by both UI and voice routes
+// ──────────────────────────────────────────────────────────
+async function sarvamTTS(text, lang = "or") {
+  const langCode = lang === "or" ? "od-IN" : "en-IN";
+  const speaker  = lang === "or" ? "meera" : "meera"; // meera works for both
+
+  const response = await axios.post(
+    "https://api.sarvam.ai/text-to-speech",
+    {
+      inputs: [text],
+      target_language_code: langCode,
+      speaker,
+      pitch: 0,
+      pace: 1.05,
+      loudness: 1.5,
+      speech_sample_rate: 8000,        // telephony optimised
+      enable_preprocessing: true,
+      model: "bulbul:v2",
+    },
+    {
+      headers: {
+        "api-subscription-key": SARVAM_API_KEY,
+        "Content-Type": "application/json",
+      },
+      timeout: 10000,
+      responseType: "json",
+    }
+  );
+
+  const b64Audio = response.data?.audios?.[0];
+  if (!b64Audio) throw new Error("Sarvam returned no audio");
+  return Buffer.from(b64Audio, "base64");
+}
+
+// ──────────────────────────────────────────────────────────
+//  STATIC FILES  (serves public/index.html as the UI)
+// ──────────────────────────────────────────────────────────
+app.use(express.static(path.join(__dirname, "public")));
+app.use("/audio", express.static(AUDIO_DIR));
+
+// ──────────────────────────────────────────────────────────
+//  API: /api/tts  — used by the web UI to play Arjun's voice
+// ──────────────────────────────────────────────────────────
+app.post("/api/tts", async (req, res) => {
+  const { text, lang = "or" } = req.body;
+  if (!text) return res.status(400).json({ error: "No text provided" });
+
+  try {
+    const audioBuffer = await sarvamTTS(text, lang);
+    res.set("Content-Type", "audio/wav");
+    res.send(audioBuffer);
+  } catch (err) {
+    console.error("TTS error:", err.response?.data || err.message);
+    res.status(500).json({ error: "TTS failed", detail: err.message });
   }
-}
-
-function clearSession(callSid) {
-  delete sessions[callSid];
-}
+});
 
 // ──────────────────────────────────────────────────────────
-//  CLAUDE — get reply
+//  API: /api/chat  — used by the web UI chat window
 // ──────────────────────────────────────────────────────────
-async function getArjunReply(callSid, userText) {
-  saveTurn(callSid, "user", userText);
-  const history = getHistory(callSid);
+app.post("/api/chat", async (req, res) => {
+  const { system, messages } = req.body;
+  if (!messages) return res.status(400).json({ error: "No messages" });
 
   try {
     const response = await claude.messages.create({
-      model: "claude-haiku-4-5",  // fastest model = lowest latency
-      max_tokens: 180,
-      system: SYSTEM_PROMPT,
+      model: "claude-haiku-4-5",
+      max_tokens: 200,
+      system: system || SYS_EN,
+      messages,
+    });
+    res.json(response);
+  } catch (err) {
+    console.error("Claude error:", err.message);
+    res.status(500).json({ error: "Claude API failed", detail: err.message });
+  }
+});
+
+// ──────────────────────────────────────────────────────────
+//  API: /api/outbound-call  — Twilio outbound calling
+// ──────────────────────────────────────────────────────────
+app.post("/api/outbound-call", async (req, res) => {
+  const { phone, lang = "or" } = req.body;
+  if (!phone) return res.status(400).json({ error: "Phone number required" });
+
+  try {
+    const call = await twilioClient.calls.create({
+      to: phone,
+      from: TWILIO_PHONE_NUMBER,
+      url: `${PUBLIC_URL}/voice?lang=${lang}`,
+      method: "POST",
+    });
+    res.json({ callSid: call.sid, status: call.status });
+  } catch (err) {
+    console.error("Outbound call error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ──────────────────────────────────────────────────────────
+//  API: /api/call-status/:sid  — poll call status
+// ──────────────────────────────────────────────────────────
+app.get("/api/call-status/:sid", async (req, res) => {
+  try {
+    const call = await twilioClient.calls(req.params.sid).fetch();
+    res.json({ status: call.status, duration: call.duration });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ──────────────────────────────────────────────────────────
+//  TWILIO VOICE WEBHOOKS
+// ──────────────────────────────────────────────────────────
+
+async function getVoiceReply(callSid, userText) {
+  saveTurn(callSid, "user", userText);
+  const history = getHistory(callSid);
+  try {
+    const response = await claude.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 150,
+      system: VOICE_SYSTEM_PROMPT,
       messages: history,
     });
     const reply = response.content[0].text.trim();
     saveTurn(callSid, "assistant", reply);
     return reply;
   } catch (err) {
-    console.error("Claude error:", err.message);
-    const fallback =
-      "Mun ektu samaya nuchhi. Sorry, I had a small issue. Please ask your question again.";
-    saveTurn(callSid, "assistant", fallback);
-    return fallback;
+    console.error("Claude voice error:", err.message);
+    return "Sorry, I had a small issue. Please ask your question again.";
   }
 }
 
-// ──────────────────────────────────────────────────────────
-//  SARVAM TTS
-// ──────────────────────────────────────────────────────────
-async function textToSpeech(text) {
-  try {
-    const response = await axios.post(
-      "https://api.sarvam.ai/text-to-speech",
-      {
-        inputs: [text],
-        target_language_code: "od-IN",   // Odia
-        speaker: "meera",                // best Odia female voice on Sarvam
-        pitch: 0,
-        pace: 1.1,                       // slightly faster = less dead air on phone
-        loudness: 1.5,
-        speech_sample_rate: 8000,        // 8kHz = telephony optimised
-        enable_preprocessing: true,
-        model: "bulbul:v2",
-      },
-      {
-        headers: {
-          "api-subscription-key": SARVAM_API_KEY,
-          "Content-Type": "application/json",
-        },
-        timeout: 10000,
-      }
-    );
-
-    const b64Audio = response.data?.audios?.[0];
-    if (!b64Audio) {
-      console.error("Sarvam TTS: no audio in response");
-      return null;
-    }
-
-    const filename = `${uuidv4()}.wav`;
-    const filepath = path.join(AUDIO_DIR, filename);
-    fs.writeFileSync(filepath, Buffer.from(b64Audio, "base64"));
-    return `${PUBLIC_URL}/audio/${filename}`;
-  } catch (err) {
-    console.error("Sarvam TTS error:", err.response?.data || err.message);
-    return null;
-  }
-}
-
-// ──────────────────────────────────────────────────────────
-//  TWIML HELPERS
-// ──────────────────────────────────────────────────────────
-const GATHER_TIMEOUT = 5;
-const SPEECH_HINTS   = "admission fee hostel placement branch ETC campus apply";
-
-function buildGatherTwiml(audioUrl, fallbackText, actionUrl) {
-  const VoiceResponse = twilio.twiml.VoiceResponse;
-  const vr     = new VoiceResponse();
-  const gather = vr.gather({
-    input:         "speech",
-    action:        actionUrl,
-    method:        "POST",
-    timeout:       GATHER_TIMEOUT,
-    speechTimeout: "auto",
-    language:      "hi-IN",       // Sarvam works best with hi-IN recognition for Indian accents
-    hints:         SPEECH_HINTS,
-  });
-  if (audioUrl) {
-    gather.play(audioUrl);
-  } else {
-    gather.say({ voice: "Polly.Aditi", language: "en-IN" }, fallbackText);
-  }
-  // If silence → loop back
-  vr.redirect({ method: "POST" }, actionUrl);
-  return vr.toString();
-}
-
-function buildEndTwiml(audioUrl, fallbackText) {
+async function buildVoiceTwiml(text, actionUrl) {
   const VoiceResponse = twilio.twiml.VoiceResponse;
   const vr = new VoiceResponse();
-  if (audioUrl) {
-    vr.play(audioUrl);
-  } else {
-    vr.say({ voice: "Polly.Aditi", language: "en-IN" }, fallbackText);
+
+  let audioUrl = null;
+  try {
+    const audioBuffer = await sarvamTTS(text, "or");
+    const filename = `${uuidv4()}.wav`;
+    fs.writeFileSync(path.join(AUDIO_DIR, filename), audioBuffer);
+    audioUrl = `${PUBLIC_URL}/audio/${filename}`;
+  } catch (err) {
+    console.error("TTS failed, using Twilio fallback:", err.message);
   }
-  vr.hangup();
+
+  if (actionUrl) {
+    const gather = vr.gather({
+      input: "speech",
+      action: actionUrl,
+      method: "POST",
+      timeout: 5,
+      speechTimeout: "auto",
+      language: "hi-IN",
+      hints: "admission fee hostel placement ETC campus apply",
+    });
+    if (audioUrl) gather.play(audioUrl);
+    else gather.say({ voice: "Polly.Aditi", language: "en-IN" }, text);
+    vr.redirect({ method: "POST" }, actionUrl);
+  } else {
+    if (audioUrl) vr.play(audioUrl);
+    else vr.say({ voice: "Polly.Aditi", language: "en-IN" }, text);
+    vr.hangup();
+  }
+
   return vr.toString();
 }
 
-// ──────────────────────────────────────────────────────────
-//  ROUTES
-// ──────────────────────────────────────────────────────────
-
-// Serve generated audio files to Twilio
-app.use("/audio", express.static(AUDIO_DIR));
-
-// Root route — browser check
-app.get("/", (req, res) => {
-  res.send("Arjun Bot is running ✅");
-});
-
-// Health check — UptimeRobot pings this
-app.get("/health", (req, res) => {
-  res.json({ status: "ok", bot: "Arjun v2 — Sarvam TTS" });
-});
-
-// ── Entry: Twilio calls this when call connects ───────────
+// Entry point when call connects
 app.post("/voice", async (req, res) => {
   const callSid = req.body.CallSid || "unknown";
   clearSession(callSid);
 
-  const greeting = await getArjunReply(
+  const greeting = await getVoiceReply(
     callSid,
-    "A new caller just joined. Greet them warmly as Arjun and ask how you can help them today."
+    "A new caller just connected. Greet them warmly as Arjun and ask how you can help."
   );
-  const audioUrl = await textToSpeech(greeting);
-  console.log(`[${callSid}] GREETING → ${greeting.slice(0, 100)}`);
+  console.log(`[${callSid}] GREETING → ${greeting.slice(0, 80)}`);
 
-  res.type("text/xml");
-  res.send(buildGatherTwiml(audioUrl, greeting, `${PUBLIC_URL}/respond`));
+  const twiml = await buildVoiceTwiml(greeting, `${PUBLIC_URL}/respond`);
+  res.type("text/xml").send(twiml);
 });
 
-// ── Every caller utterance after greeting ─────────────────
+// Every caller utterance
 app.post("/respond", async (req, res) => {
   const callSid    = req.body.CallSid || "unknown";
   const userSpeech = (req.body.SpeechResult || "").trim();
@@ -282,38 +330,35 @@ app.post("/respond", async (req, res) => {
 
   console.log(`[${callSid}] USER (${confidence.toFixed(2)}): "${userSpeech}"`);
 
-  // ── Nothing heard ──────────────────────────────────────
   if (!userSpeech || confidence < 0.25) {
-    const nudge =
-      "Daya kari aau thare kahanti. Sorry, I did not catch that. Please repeat your question.";
-    const audioUrl = await textToSpeech(nudge);
-    res.type("text/xml");
-    return res.send(buildGatherTwiml(audioUrl, nudge, `${PUBLIC_URL}/respond`));
+    const nudge = "Sorry, I did not catch that. Could you please repeat your question?";
+    const twiml = await buildVoiceTwiml(nudge, `${PUBLIC_URL}/respond`);
+    return res.type("text/xml").send(twiml);
   }
 
-  // ── Goodbye detection ──────────────────────────────────
-  const byeWords = [
-    "bye", "goodbye", "thank you", "thanks", "no more", "that's all",
-    "ok bye", "nothing else", "dhanyabad", "theek hai", "shukriya",
-  ];
-  if (byeWords.some((w) => userSpeech.toLowerCase().includes(w))) {
-    const farewell = await getArjunReply(
+  const byeWords = ["bye", "goodbye", "thank you", "thanks", "no more", "that's all", "ok bye", "dhanyabad"];
+  if (byeWords.some(w => userSpeech.toLowerCase().includes(w))) {
+    const farewell = await getVoiceReply(
       callSid,
-      "The caller said goodbye. Give a warm 2-sentence farewell and invite them to visit DRIEMS campus."
+      "The caller said goodbye. Give a warm 2-sentence farewell and invite them to visit DRIEMS."
     );
-    const audioUrl = await textToSpeech(farewell);
     clearSession(callSid);
-    res.type("text/xml");
-    return res.send(buildEndTwiml(audioUrl, farewell));
+    const twiml = await buildVoiceTwiml(farewell, null); // null = hangup after
+    return res.type("text/xml").send(twiml);
   }
 
-  // ── Normal turn ────────────────────────────────────────
-  const reply    = await getArjunReply(callSid, userSpeech);
-  const audioUrl = await textToSpeech(reply);
-  console.log(`[${callSid}] ARJUN → ${reply.slice(0, 120)}`);
+  const reply = await getVoiceReply(callSid, userSpeech);
+  console.log(`[${callSid}] ARJUN → ${reply.slice(0, 100)}`);
 
-  res.type("text/xml");
-  res.send(buildGatherTwiml(audioUrl, reply, `${PUBLIC_URL}/respond`));
+  const twiml = await buildVoiceTwiml(reply, `${PUBLIC_URL}/respond`);
+  res.type("text/xml").send(twiml);
+});
+
+// ──────────────────────────────────────────────────────────
+//  HEALTH CHECK
+// ──────────────────────────────────────────────────────────
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", bot: "Arjun — Sarvam TTS" });
 });
 
 // ──────────────────────────────────────────────────────────
