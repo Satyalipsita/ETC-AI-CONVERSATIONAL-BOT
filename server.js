@@ -378,8 +378,11 @@ setInterval(() => {
 async function sarvamTTS(text, lang, forPhone = true) {
   if (!SARVAM_KEY) throw new Error('SARVAM_API_KEY is not set');
   const langCode   = lang === 'or' ? 'od-IN' : 'en-IN';
-  const speaker    = lang === 'or' ? 'manisha' : 'priya';
+  // bulbul:v3 speakers — anushka is the best native Odia female voice
+  // For English fallback use 'priya' (warm Indian English female)
+  const speaker    = lang === 'or' ? 'anushka' : 'priya';
   const sampleRate = forPhone ? 8000 : 22050;
+
   const r = await fetch('https://api.sarvam.ai/text-to-speech', {
     method:  'POST',
     headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
@@ -387,13 +390,11 @@ async function sarvamTTS(text, lang, forPhone = true) {
       inputs:               [text.replace(/[*_`#]/g, '').trim()],
       target_language_code: langCode,
       speaker,
-      model:                'bulbul:v2',
-      pitch:                0,
-      pace:                 1.0,
-      loudness:             1.5,
+      model:                'bulbul:v3',   // v3 = proper Odia accent, not Bengali
+      pace:                 1.0,           // 0.5–2.0 on v3
       speech_sample_rate:   sampleRate,
-      enable_preprocessing: true,
       output_format:        'wav'
+      // NOTE: bulbul:v3 does NOT support pitch or loudness — removed
     })
   });
   if (!r.ok) { const e = await r.text(); throw new Error(`Sarvam TTS ${r.status}: ${e}`); }
