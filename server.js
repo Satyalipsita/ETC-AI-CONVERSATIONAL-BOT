@@ -25,7 +25,6 @@ const TW_TOKEN       = process.env.TWILIO_AUTH_TOKEN;
 const TW_FROM        = process.env.TWILIO_PHONE_NUMBER;
 const PUBLIC_URL     = process.env.PUBLIC_URL;
 const SARVAM_KEY     = process.env.SARVAM_API_KEY;
-const GOOGLE_TTS_KEY = process.env.GOOGLE_TTS_KEY;
 
 // ══════════════════════════════════════════════════════════════════════════
 //  INLINE KNOWLEDGE BASE  (replaces knowledge.json + knowledgeSearch.js)
@@ -373,7 +372,7 @@ setInterval(() => {
 }, 600000);
 
 // ══════════════════════════════════════════════════════════════════════════
-//  TTS — Sarvam AI (primary) → Google Cloud TTS (fallback)
+//  TTS — Sarvam AI (bulbul:v3, od-IN, anushka speaker)
 // ══════════════════════════════════════════════════════════════════════════
 async function sarvamTTS(text, lang, forPhone = true) {
   if (!SARVAM_KEY) throw new Error('SARVAM_API_KEY is not set');
@@ -404,41 +403,10 @@ async function sarvamTTS(text, lang, forPhone = true) {
   return Buffer.from(b64, 'base64');
 }
 
-async function googleCloudTTS(text, lang, forPhone = true) {
-  if (!GOOGLE_TTS_KEY) throw new Error('GOOGLE_TTS_KEY is not set');
-  const voiceMap = {
-    or: { languageCode: 'or-IN', name: 'or-IN-Standard-A', ssmlGender: 'FEMALE' },
-    en: { languageCode: 'en-IN', name: 'en-IN-Neural2-A',  ssmlGender: 'FEMALE' }
-  };
-  const voice         = voiceMap[lang] || voiceMap.en;
-  const sampleRate    = forPhone ? 8000 : 22050;
-  const audioEncoding = forPhone ? 'LINEAR16' : 'MP3';
-  const r = await fetch(
-    `https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TTS_KEY}`,
-    {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        input:       { text: text.replace(/[*_`#]/g, '').trim() },
-        voice,
-        audioConfig: { audioEncoding, sampleRateHertz: sampleRate, speakingRate: 1.0 }
-      })
-    }
-  );
-  if (!r.ok) { const e = await r.text(); throw new Error(`Google Cloud TTS ${r.status}: ${e}`); }
-  const json = await r.json();
-  if (!json.audioContent) throw new Error('Google Cloud TTS: no audio in response');
-  return Buffer.from(json.audioContent, 'base64');
-}
 
 async function makeTTS(text, lang, forPhone = true) {
   const clean = text.replace(/[*_`#\n]/g, ' ').replace(/\s+/g, ' ').trim();
-  try {
-    return await sarvamTTS(clean, lang, forPhone);
-  } catch (e) {
-    console.warn(`Sarvam failed (${e.message}), falling back to Google Cloud TTS...`);
-    return await googleCloudTTS(clean, lang, forPhone);
-  }
+  return await sarvamTTS(clean, lang, forPhone);
 }
 
 async function storeAudio(text, lang, forPhone = true) {
