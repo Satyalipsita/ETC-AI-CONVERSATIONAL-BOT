@@ -1,3 +1,5 @@
+const { buildKnowledgeContext, getOdiaReply } = require('./knowledgeSearch');
+
 const express = require('express');
 const fetch   = require('node-fetch');
 const twilio  = require('twilio');
@@ -23,7 +25,21 @@ const SARVAM_KEY     = process.env.SARVAM_API_KEY;
 //  SYSTEM PROMPTS
 //  Priya — confident, warm, knowledgeable DRIEMS ETC counsellor
 // ══════════════════════════════════════════════════════════════════════════
-const SYS_OR = `ତୁମେ ପ୍ରିୟା — DRIEMS Polytechnic, ତଙ୍ଗି, କଟକ ର ଜଣେ ଅଭିଜ୍ଞ admission counsellor। ତୁମେ phone ରେ ଜଣେ ଛାତ୍ର ବା ଅଭିଭାବକଙ୍କ ସହ ଓଡ଼ିଆ ରେ କଥା ହେଉଛ।
+const systemPrompt = `
+You are Priya — the confident, warm, Odia-speaking AI Admission Assistant 
+for DRIEMS Polytechnic ETC Branch.
+
+${buildKnowledgeContext()}
+
+SPEAKING STYLE FOR PHONE CALLS:
+- Speak in Odia (transliterated). Short sentences. Max 3-4 lines per reply.
+- Be direct and confident. You have all the facts above.
+- Never say "I am not sure", "maybe", "I think". You KNOW these facts.
+- Sound like a helpful senior student, not a robot.
+- After answering, always ask "Aau kana janibaku chahanti?" (What else do you want to know?)
+- If caller asks for a teacher, say: "Satya Sir ku call karanti: 7978900914"
+`;
+
 
 ତୁମେ କିପରି କଥା ହେବ — ଏହା ସବୁଠୁ ଗୁରୁତ୍ୱପୂର୍ଣ୍ଣ:
 - ସ୍ୱାଭାବିକ ଓଡ଼ିଆ ରେ କଥା ହୁଅ — ଯେପରି ଜଣେ ବାସ୍ତବ ମଣିଷ ଫୋନ ରେ କଥା ହୁଏ
@@ -360,20 +376,31 @@ app.post('/api/chat', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ── Claude reply for phone ────────────────────────────────────────────────────
-async function claudeReply(history, lang) {
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': ANTH_KEY, 'anthropic-version': '2023-06-01' },
-    body:    JSON.stringify({
-      model:      'claude-haiku-4-5-20251001',
-      max_tokens: 120,
-      system:     lang === 'or' ? SYS_OR : SYS_EN,
-      messages:   history
-    })
+async function getPriyaResponse(callerSpeech, conversationHistory) {
+  
+  // FAST PATH: Try local knowledge base first
+  const localReply = getOdiaReply(callerSpeech);
+  if (localReply && conversationHistory.length <= 2) {
+    // For simple first-time questions, use instant local reply
+    // This cuts latency from ~2000ms to ~50ms
+    console.log('[PRIYA] Using local knowledge match - fast path');
+    return localReply;
+  }
+
+  // FULL PATH: Send to Claude with knowledge context injected
+  console.log('[PRIYA] Sending to Claude with knowledge context');
+  
+  const response = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',   // fast model for low latency
+    max_tokens: 300,                        // keep replies short for phone
+    system: systemPrompt,
+    messages: [
+      ...conversationHistory,
+      { role: 'user', content: callerSpeech }
+    ]
   });
-  const d = await r.json();
-  return d.content?.[0]?.text || TEXTS[lang]?.sorry || 'Sorry.';
+
+  return response.content[0].text;
 }
 
 // ══════════════════════════════════════════════════════════════════════════
