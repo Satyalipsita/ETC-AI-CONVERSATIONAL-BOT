@@ -1,0 +1,364 @@
+{
+  "meta": {
+    "college": "DRIEMS Polytechnic",
+    "branch": "Electronics and Telecommunication (ETC)",
+    "contact_person": "Satya Ranjan Panigrahi, Assistant Professor, ETC Department",
+    "contact_number": "7978900914",
+    "location": "Tangi, Cuttack, Odisha",
+    "website": "driems.ac.in",
+    "admission_portal": "sams.odisha.gov.in",
+    "affiliation": "AICTE Approved, SCTE&VT Odisha Affiliated"
+  },
+  "intents": [
+    {
+      "id": 1,
+      "category": "greeting",
+      "keywords": ["hello", "hi", "namaskara", "helo", "haalo", "ke", "kaun", "bol", "katha", "speak"],
+      "odia_reply": "Namaskara! Mu Priya, DRIEMS Polytechnic ra ETC Branch ra AI Admission Assistant. Aapana admission, fees, hostel, placement — jebhe prashna thau, mu spashta uttara debI. Kahanu, kana janiba chahanti?",
+      "english_ref": "Hello! I am Priya, AI Admission Assistant of DRIEMS Polytechnic ETC Branch. Whatever your question about admission, fees, hostel, placement — I will answer clearly. Tell me, what do you want to know?"
+    },
+    {
+      "id": 2,
+      "category": "greeting",
+      "keywords": ["odia", "odia re", "language", "bhasha", "odia boli"],
+      "odia_reply": "Haan! Mu Odia re sampurna rupe katha karibaku saksham. Aapana nischinta re prashna karanti, mu Odia re spashta uttara debI.",
+      "english_ref": "Yes! I am fully capable of speaking in Odia. Please ask your questions comfortably, I will answer clearly in Odia."
+    },
+    {
+      "id": 3,
+      "category": "greeting",
+      "keywords": ["machine", "robot", "real", "manusha", "human", "artificial"],
+      "odia_reply": "Mu ekta AI Assistant — Priya. Kintu DRIEMS ETC Branch sambandhe sabu prashnar sata uttara deba para mu poori prastauta. Real teacher ke baat karana darkar parila, mu connect karaideba. Ebe kahanu — kana janiba chahanti?",
+      "english_ref": "I am an AI Assistant — Priya. But I am fully prepared to answer all questions about DRIEMS ETC Branch. If you need to speak to a real teacher, I will connect you. Tell me — what do you want to know?"
+    },
+    {
+      "id": 4,
+      "category": "admission",
+      "keywords": ["admission", "keba", "kebe", "when", "kana bhali", "apply", "form", "date", "last date"],
+      "odia_reply": "DRIEMS Polytechnic re admission SAMS Odisha portal madhyame hoi — sams.odisha.gov.in. Sadhaaranata June-July mahina re form fill up hoi, aau August re admission complete hoi. Latest date para sams.odisha.gov.in check karanti. Kono prashna thile Satya Sir ku call karanti: 7978900914.",
+      "english_ref": "Admission to DRIEMS Polytechnic happens through SAMS Odisha portal — sams.odisha.gov.in. Usually forms are filled in June-July, and admission completes in August. Check sams.odisha.gov.in for latest dates. For any queries call Satya Sir: 7978900914."
+    },
+    {
+      "id": 5,
+      "category": "admission",
+      "keywords": ["document", "kagaj", "certificate", "marksheet", "ki ki", "kana kana laagiba", "necessary"],
+      "odia_reply": "ETC branch re admission para — 10th marksheet, Pass certificate, Caste certificate jadi laagu hue, Residential certificate, aau 3 ta passport size photo lagiba. Sabu documents SAMS portal re online upload karibaku heba. Kono confusion thile Satya Sir ku call karanti: 7978900914.",
+      "english_ref": "For ETC branch admission — 10th marksheet, pass certificate, caste certificate (if applicable), residential certificate, and 3 passport size photos are needed. All documents must be uploaded online on SAMS portal. For any confusion call Satya Sir: 7978900914."
+    },
+    {
+      "id": 6,
+      "category": "admission",
+      "keywords": ["sams", "portal", "online", "website", "apply karibe"],
+      "odia_reply": "SAMS Odisha portal — sams.odisha.gov.in — re aapana online apply karibaku heba. Direct college re jaai admission milena. Portal re registration kari, form fill kari, documents upload kari, aau fees pay karibaku heba. Mu step-by-step guide karideba — kana step re doubt achi?",
+      "english_ref": "You must apply online on SAMS Odisha portal — sams.odisha.gov.in. Direct college admission is not possible. Register on portal, fill form, upload documents, and pay fees. I will guide you step by step — which step do you have doubts about?"
+    },
+    {
+      "id": 7,
+      "category": "admission",
+      "keywords": ["merit", "merit list", "rank", "list", "selection"],
+      "odia_reply": "Merit list SAMS Odisha portal re publish hoi. Online apply closing pachhe 1-2 saptaha bhitare merit list ber hoi. Aapana sams.odisha.gov.in re login kari nijra merit rank check karipaaribe. Rank bhali thile DRIEMS ETC re seat confirm!",
+      "english_ref": "Merit list is published on SAMS Odisha portal. Within 1-2 weeks after online application closes. Login to sams.odisha.gov.in to check your merit rank. If rank is good, seat at DRIEMS ETC is confirmed!"
+    },
+    {
+      "id": 8,
+      "category": "eligibility",
+      "keywords": ["percentage", "marks", "kete", "minimum", "eligible", "eligibility", "yogyata"],
+      "odia_reply": "ETC branch re admission para 10th pass with minimum 35% marks darkar. SC/ST students para relaxation achi. Aapananka category ki? Seia anujayi mu exact eligibility bataideba.",
+      "english_ref": "For ETC branch admission, 10th pass with minimum 35% marks is required. Relaxation exists for SC/ST students. What is your category? I will tell you exact eligibility accordingly."
+    },
+    {
+      "id": 9,
+      "category": "eligibility",
+      "keywords": ["science", "arts", "commerce", "stream", "subject", "PCM", "neba"],
+      "odia_reply": "Haan! Polytechnic Diploma para 10th pass — jebhe stream heu thau Science, Arts, ba Commerce — apply karipaaribe. Kono subject specific restriction nei. Aapana 10th pass thile eligible!",
+      "english_ref": "Yes! For Polytechnic Diploma, any stream — Science, Arts, or Commerce — can apply. No subject specific restriction. If you have passed 10th, you are eligible!"
+    },
+    {
+      "id": 10,
+      "category": "eligibility",
+      "keywords": ["age", "umur", "baya", "limit", "age limit", "kete baya"],
+      "odia_reply": "Diploma admission para saadharanata kono age limit nai. Tebhu, SAMS guidelines badalia thiba paarei — sams.odisha.gov.in re current year ra prospectus dekhanti nischita heba.",
+      "english_ref": "For Diploma admission, there is generally no age limit. However, SAMS guidelines may change — check the current year's prospectus on sams.odisha.gov.in to be sure."
+    },
+    {
+      "id": 11,
+      "category": "eligibility",
+      "keywords": ["fail", "failed", "compartment", "supplementary", "pass nai"],
+      "odia_reply": "Na. Polytechnic Diploma admission para 10th pass compulsory. Jadi aapana ebe compartment ba supplementary de thanti, result aasibaa pachhe apply karipaaribe. Tension nebi — result pachhe mu aapanaku guide kariba.",
+      "english_ref": "No. 10th pass is compulsory for Polytechnic Diploma admission. If you have compartment or supplementary now, you can apply after the result comes. Don't worry — I will guide you after result."
+    },
+    {
+      "id": 12,
+      "category": "eligibility",
+      "keywords": ["other state", "baahara", "outside", "bihar", "jharkhand", "west bengal", "domicile"],
+      "odia_reply": "Haan, other state students bhi DRIEMS re apply karipaaribe. Kintu Odisha domicile students ku priority seat milei. SAMS re Other State category achi — seita check karanti. Exact details para Satya Sir: 7978900914.",
+      "english_ref": "Yes, students from other states can also apply to DRIEMS. But priority seats go to Odisha domicile students. Check the Other State category in SAMS. For exact details contact Satya Sir: 7978900914."
+    },
+    {
+      "id": 13,
+      "category": "fees",
+      "keywords": ["fees", "fee", "kharcha", "cost", "kitna", "kete", "taka", "rupees", "paisa", "charge"],
+      "odia_reply": "DRIEMS Polytechnic ETC branch ra annual fees matra 65,000 taka — aau seta 2 easy kisti re bharibaku miliba! Kono eka sathe bada payment nei. Ete Odisha ra best private polytechnic guda bhitare sabse competitive fees. Aau kana jaanibaku chahanti?",
+      "english_ref": "DRIEMS Polytechnic ETC branch annual fee is just ₹65,000 — payable in 2 easy instalments! No single large payment. This is among the most competitive fees in Odisha's top private polytechnics. What else do you want to know?"
+    },
+    {
+      "id": 14,
+      "category": "fees",
+      "keywords": ["installment", "kisti", "instalment", "payment", "eka sathe", "divided"],
+      "odia_reply": "DRIEMS re annual fees 65,000 taka — 2 convenient kisti re bharibaku miliba! Eka sathe itney bada amount bharibaku padena. Kisti due dates jaanibaku Satya Sir ku call karanti: 7978900914.",
+      "english_ref": "DRIEMS annual fee is ₹65,000 — payable in 2 convenient instalments! No need to pay the whole amount at once. Call Satya Sir for instalment due dates: 7978900914."
+    },
+    {
+      "id": 15,
+      "category": "fees",
+      "keywords": ["scholarship", "free", "concession", "waiver", "sc", "st", "obc", "reservation"],
+      "odia_reply": "Haan! SC/ST students mane Post Matric Scholarship pai thanti — government scheme madhyame fees almost cover hoi jae! OBC students bhi eligible. Scholarship para aapana category certificate ready rakhantu. Satya Sir ku details para call karanti: 7978900914.",
+      "english_ref": "Yes! SC/ST students receive Post Matric Scholarship — through government scheme fees are almost fully covered! OBC students are also eligible. Keep your category certificate ready for scholarship. Call Satya Sir for details: 7978900914."
+    },
+    {
+      "id": 16,
+      "category": "fees",
+      "keywords": ["total", "first year", "overall", "all together", "complete fees", "sabumilei"],
+      "odia_reply": "First year re total — ETC course fees 65,000 taka (2 kisti re) aau jadi hostel re thanbaa ta 75,000 taka (eka kisti re). Hostel fees re teen waqt swaadishtha khaana, WiFi, gym, swimming pool — sab included! Ete really excellent value. Satya Sir: 7978900914.",
+      "english_ref": "First year total — ETC course fees ₹65,000 (2 instalments) and hostel if staying ₹75,000 (1 instalment). Hostel fees include 3 delicious meals daily, WiFi, gym, swimming pool — all included! Truly excellent value. Satya Sir: 7978900914."
+    },
+    {
+      "id": 17,
+      "category": "fees",
+      "keywords": ["government", "govt", "sarkari", "compare", "cheaper", "kam fees"],
+      "odia_reply": "Government polytechnic re fees tike kam hoi, satya. Kintu DRIEMS re ki milei jaananti ki? Free transport, swimming pool, gym, 100+ acres green campus, Hitachi-Tata Power janka top companies ra placement — ete government college re milena! Value for money re DRIEMS far better.",
+      "english_ref": "Government polytechnic fees are slightly less, true. But do you know what DRIEMS offers? Free transport, swimming pool, gym, 100+ acres green campus, placement from companies like Hitachi and Tata Power — not available in government colleges! DRIEMS is far better value for money."
+    },
+    {
+      "id": 18,
+      "category": "etc_branch",
+      "keywords": ["etc", "electronics", "telecommunication", "padhibi", "subjects", "syllabus", "ki padhiba"],
+      "odia_reply": "ETC — Electronics and Telecommunication — re aapana Electronics, Communication Systems, Digital Electronics, Microprocessor, Antenna Theory, Signal Processing, aau VLSI Design padhiba. Practical labs re hands-on training miliba. Ete industry-ready knowledge milei!",
+      "english_ref": "In ETC — Electronics and Telecommunication — you will study Electronics, Communication Systems, Digital Electronics, Microprocessor, Antenna Theory, Signal Processing, and VLSI Design. Hands-on training in practical labs. You get industry-ready knowledge here!"
+    },
+    {
+      "id": 19,
+      "category": "etc_branch",
+      "keywords": ["scope", "career", "future", "opportunity", "kana heba", "benefit"],
+      "odia_reply": "ETC branch ra scope bahut bada! 5G, IoT, Satellite Communication — sab future ETC students ku belong karei. BSNL, Airtel, ISRO, Defense, BEL, ECIL, aau DRIEMS ra own recruiters — Hitachi, Exicom Telecom, Cummins, Centum Electronics, Voltas, Tata Power! ETC eka future-proof branch!",
+      "english_ref": "ETC branch has massive scope! 5G, IoT, Satellite Communication — all future technologies belong to ETC students. BSNL, Airtel, ISRO, Defense, BEL, ECIL, and DRIEMS own recruiters — Hitachi, Exicom Telecom, Cummins, Centum Electronics, Voltas, Tata Power! ETC is a future-proof branch!"
+    },
+    {
+      "id": 20,
+      "category": "etc_branch",
+      "keywords": ["btech", "b.tech", "lateral", "higher", "degree", "engineering", "upgrade"],
+      "odia_reply": "Bilkul! DRIEMS thekaa ETC Diploma complete karile B.Tech 2nd year re Lateral Entry — direct admission paaibe. Ete 1 year samay bachiba aau full B.Tech degree miliba. Bahut DRIEMS students B.Tech kari aji bhala job re achi!",
+      "english_ref": "Absolutely! After completing ETC Diploma from DRIEMS, you get direct admission to B.Tech 2nd year through Lateral Entry. This saves 1 year and you get a full B.Tech degree. Many DRIEMS students have done B.Tech and are in great jobs today!"
+    },
+    {
+      "id": 21,
+      "category": "etc_branch",
+      "keywords": ["seats", "seat", "kete", "intake", "capacity", "available"],
+      "odia_reply": "DRIEMS Polytechnic ETC branch re 60 seats achi. Seats limited thiba karuna early apply karanti — merit re seat confirm heba. Seat nischita karibaku Satya Sir ku call karanti: 7978900914.",
+      "english_ref": "DRIEMS Polytechnic ETC branch has 60 seats. Since seats are limited, apply early — seat will be confirmed based on merit. Call Satya Sir to confirm seat: 7978900914."
+    },
+    {
+      "id": 22,
+      "category": "etc_branch",
+      "keywords": ["girls", "female", "ladies", "sister", "bhagini", "woman", "women"],
+      "odia_reply": "Haan! ETC branch re girls students bhi thanti aau saflata pai thanti. College re girls ku alag hostel facility achi aau campus fully safe. Aapana nischinte ETC choose karipaarantu!",
+      "english_ref": "Yes! Girls students are also in ETC branch and they succeed. The college has separate hostel facility for girls and campus is fully safe. You can comfortably choose ETC!"
+    },
+    {
+      "id": 23,
+      "category": "etc_branch",
+      "keywords": ["teacher", "faculty", "sir", "madam", "professor", "staff", "instructor"],
+      "odia_reply": "DRIEMS ETC department re M.Tech aau Ph.D qualified experienced teachers achi. Department re Satya Ranjan Panigrahi Sir — 12+ years experience thekai padhui thanti. Teachers sabu students saatha friendly aau supportive. Practical aau theory — dono re strong guidance milei.",
+      "english_ref": "DRIEMS ETC department has M.Tech and Ph.D qualified experienced teachers. Satya Ranjan Panigrahi Sir with 12+ years experience leads the department. Teachers are friendly and supportive. Strong guidance in both practical and theory."
+    },
+    {
+      "id": 24,
+      "category": "hostel",
+      "keywords": ["hostel", "stay", "raha", "thiba", "room", "accommodation", "living"],
+      "odia_reply": "Haan! DRIEMS re boys aau girls dono para alag alag hostel facility achi. Hostel re 24 ghanta security, clean rooms, teen waqt swaadishtha khaana, WiFi, gym, aau swimming pool — sab milei. Outstation students para hostel ekta excellent choice!",
+      "english_ref": "Yes! DRIEMS has separate hostel facilities for boys and girls. Hostel provides 24-hour security, clean rooms, 3 delicious meals, WiFi, gym, and swimming pool — everything included. Hostel is an excellent choice for outstation students!"
+    },
+    {
+      "id": 25,
+      "category": "hostel",
+      "keywords": ["hostel fees", "hostel kharcha", "hostel taka", "hostel cost", "hostel kete"],
+      "odia_reply": "Hostel annual fees 75,000 taka — ekte eka kisti re bharibaku heba. Kintu ete ki ki milei? Teen waqt swaadishtha garam khaana, 24 ghanta high-speed WiFi, modern gym, swimming pool, aau 100+ acres beautiful green campus! Ete really world-class value. Satya Sir: 7978900914.",
+      "english_ref": "Hostel annual fee is ₹75,000 — one instalment. But look at what is included: 3 delicious hot meals daily, 24hr high-speed WiFi, modern gym, swimming pool, and 100+ acres beautiful green campus! Truly world-class value. Satya Sir: 7978900914."
+    },
+    {
+      "id": 26,
+      "category": "hostel",
+      "keywords": ["food", "khaana", "khana", "mess", "meal", "breakfast", "lunch", "dinner", "swadishtha", "delicious"],
+      "odia_reply": "DRIEMS hostel mess re teen waqt swaadishtha garam Odia khaana milei — subah healthy breakfast, din re full lunch, sanjha re hearty dinner. Aau ete hostel fees re include thiba — alag charge nei! Students mane ghar re khaana yaad nai karantu itna tasty khaana milei thae.",
+      "english_ref": "DRIEMS hostel mess serves 3 delicious hot Odia meals daily — healthy morning breakfast, full afternoon lunch, hearty evening dinner. And it is included in hostel fees — no extra charge! Students say the food is so tasty they don't miss home food."
+    },
+    {
+      "id": 27,
+      "category": "hostel",
+      "keywords": ["wifi", "internet", "net", "online", "broadband", "speed", "connectivity"],
+      "odia_reply": "Haan! DRIEMS campus re high-speed WiFi achi — hostel aau classroom dono re. Aapana online study, assignments, YouTube learning, sab karipaaribe bina kono interruption. Campus internet speed bhali!",
+      "english_ref": "Yes! DRIEMS campus has high-speed WiFi in both hostel and classrooms. You can do online study, assignments, YouTube learning — all without any interruption. Campus internet speed is excellent!"
+    },
+    {
+      "id": 28,
+      "category": "hostel",
+      "keywords": ["day scholar", "dayschoolar", "day", "scholar", "home", "ghare", "daily", "from home"],
+      "odia_reply": "Bilkul! Hostel compulsory nai. Jadi aapana nearby thanti, day scholar hoi padhipaaribe. Aau DRIEMS re Bhubaneswar aau Cuttack dono jaga thekaa FREE college bus achi — ta day scholars ku bhi travel tension nei!",
+      "english_ref": "Absolutely! Hostel is not compulsory. If you stay nearby, you can be a day scholar. And DRIEMS has FREE college bus from both Bhubaneswar and Cuttack — so even day scholars have zero travel stress!"
+    },
+    {
+      "id": 29,
+      "category": "facilities",
+      "keywords": ["gym", "gymnasium", "fitness", "exercise", "workout"],
+      "odia_reply": "Haan! DRIEMS campus re modern fully-equipped gym achi — bilkul free, aapana hostel fees re included! Students mane padhaai saatha saatha fit bhi rahiti. Gym, swimming pool, aau huge playground — ete Odisha ra sabu thekaa bhali polytechnic campus!",
+      "english_ref": "Yes! DRIEMS campus has a modern fully-equipped gym — completely free, included in your hostel fees! Students stay fit alongside their studies. Gym, swimming pool, and huge playground — this is among the best polytechnic campuses in Odisha!"
+    },
+    {
+      "id": 30,
+      "category": "facilities",
+      "keywords": ["swimming", "pool", "swim", "swiming"],
+      "odia_reply": "Haan! DRIEMS campus re swimming pool achi — ete Odisha ra bahut kame polytechnic colleges re milei! Students mane summer re swimming karipaarantu. Ete campus ra eka unique facility.",
+      "english_ref": "Yes! DRIEMS campus has a swimming pool — very few polytechnic colleges in Odisha have this! Students can swim especially in summer. This is a unique facility of the campus."
+    },
+    {
+      "id": 31,
+      "category": "facilities",
+      "keywords": ["playground", "sports", "ground", "football", "cricket", "badminton", "volleyball", "khela", "game"],
+      "odia_reply": "DRIEMS re 100+ acres ra huge green campus achi — ete bada playground re Cricket, Football, Badminton, Volleyball sab kheli hoi! Annual cultural fest, technical fest Electronica bhi hei. Padhaai saatha all-round development para DRIEMS perfect!",
+      "english_ref": "DRIEMS has a 100+ acres huge green campus — the big playground hosts Cricket, Football, Badminton, Volleyball! Annual cultural fest and technical fest Electronica are also held. DRIEMS is perfect for all-round development alongside studies!"
+    },
+    {
+      "id": 32,
+      "category": "facilities",
+      "keywords": ["lab", "laboratory", "practical", "equipment", "instrument", "hands on"],
+      "odia_reply": "DRIEMS re fully equipped Electronics, Communication, aau Microprocessor labs achi. Modern oscilloscopes, signal generators, embedded systems kits — sab achi. Students ete practical knowledge re bahut strong hoi thanti. Industry re jaai saadha kaaj kariparantu!",
+      "english_ref": "DRIEMS has fully equipped Electronics, Communication, and Microprocessor labs. Modern oscilloscopes, signal generators, embedded systems kits — everything is there. Students become very strong in practical knowledge. They can directly work in industry!"
+    },
+    {
+      "id": 33,
+      "category": "facilities",
+      "keywords": ["library", "books", "pustaka", "library", "reading", "reference"],
+      "odia_reply": "Haan! DRIEMS re excellent library achi — ETC related textbooks, reference books, journals, aau e-resources achi. Digital library access bhi milei. Exam preparation aau project research para library bahut useful.",
+      "english_ref": "Yes! DRIEMS has an excellent library — ETC related textbooks, reference books, journals, and e-resources are available. Digital library access is also there. Very useful for exam preparation and project research."
+    },
+    {
+      "id": 34,
+      "category": "transport",
+      "keywords": ["bus", "transport", "transportation", "travel", "commute", "bhubaneswar", "cuttack", "free bus", "vehicle"],
+      "odia_reply": "DRIEMS re Bhubaneswar aau Cuttack dono jaga thekaa bilkul FREE college bus service achi! Aapanaku kono transport expense nei — zero! Bus aapananka designated stop thekaa pick up kari college drop karei aau sanjha pheri ghara chhadei diei. Ete eka massive advantage!",
+      "english_ref": "DRIEMS provides completely FREE college bus service from both Bhubaneswar and Cuttack! Zero transport expense for you! Bus picks you up from your designated stop, drops at college, and brings you back home in the evening. This is a massive advantage!"
+    },
+    {
+      "id": 35,
+      "category": "transport",
+      "keywords": ["location", "address", "kohaan", "where", "distance", "far", "kete dur", "reach"],
+      "odia_reply": "DRIEMS Polytechnic, Tangi, Cuttack re achi. Bhubaneswar thekaa roughly 30 km. Kintu tension nebi — FREE college bus achi Bhubaneswar aau Cuttack dono jaga thekaa! Aapanaku saadha bus stop re aasibaku heba — baki sab college karei deba.",
+      "english_ref": "DRIEMS Polytechnic is at Tangi, Cuttack — roughly 30 km from Bhubaneswar. But don't worry — FREE college bus runs from both Bhubaneswar and Cuttack! You just need to come to the bus stop — college takes care of the rest."
+    },
+    {
+      "id": 36,
+      "category": "placement",
+      "keywords": ["placement", "job", "company", "recruit", "hire", "campus", "naukri"],
+      "odia_reply": "DRIEMS ETC placement outstanding! Hitachi, Exicom Telecom, Cummins India, Centum Electronics, Voltas, aau Tata Power — eta sab top companies campus re aasi direct recruitment karantu. Aapana DRIEMS thekaa ETC karile career secure!",
+      "english_ref": "DRIEMS ETC placement is outstanding! Hitachi, Exicom Telecom, Cummins India, Centum Electronics, Voltas, and Tata Power — all these top companies come to campus for direct recruitment. Your career is secure with DRIEMS ETC!"
+    },
+    {
+      "id": 37,
+      "category": "placement",
+      "keywords": ["salary", "package", "ctc", "income", "kete miliba", "pay"],
+      "odia_reply": "DRIEMS ETC freshers ku campus placement re 2 lakh thekaa 4 lakh taka annual package milei thae — aau experience saatha package bahut badhei. Hitachi, Tata Power janka companies re join karibaa pachhe growth very fast hoi.",
+      "english_ref": "DRIEMS ETC freshers get annual packages of 2 lakh to 4 lakh rupees in campus placement — and package grows significantly with experience. After joining companies like Hitachi and Tata Power, growth is very fast."
+    },
+    {
+      "id": 38,
+      "category": "placement",
+      "keywords": ["placement cell", "training", "preparation", "soft skills", "interview", "resume"],
+      "odia_reply": "Haan! DRIEMS re dedicated Training and Placement Cell achi. Ete students ku resume writing, mock interviews, aau soft skills training milei. Companies ku invite kara hei campus drive organise hei. Final year re special coaching bhi milei — sab prepare karei placement para!",
+      "english_ref": "Yes! DRIEMS has a dedicated Training and Placement Cell. Students get resume writing, mock interviews, and soft skills training. Companies are invited for campus drives. Final year students get special coaching — everything prepared for placement!"
+    },
+    {
+      "id": 39,
+      "category": "placement",
+      "keywords": ["government job", "govt job", "sarkari", "bsnl", "drdo", "bel", "je", "junior engineer", "railways"],
+      "odia_reply": "Haan! ETC Diploma holders ku BSNL, DRDO, BEL, ECIL, Railways, aau Odisha State Electricity Board re government jobs milei. Junior Engineer (JE) post para apply karipaaribe. Government job para competitive exam deba hoi — college ete bhi guide karei!",
+      "english_ref": "Yes! ETC Diploma holders can get government jobs in BSNL, DRDO, BEL, ECIL, Railways, and Odisha State Electricity Board. You can apply for Junior Engineer (JE) posts. Competitive exams needed for government jobs — college guides for this too!"
+    },
+    {
+      "id": 40,
+      "category": "placement",
+      "keywords": ["diploma pachhe", "after diploma", "job or btech", "direct job", "higher study"],
+      "odia_reply": "Dono option aapana paase achi! Diploma pachhe directly Hitachi, Exicom, Tata Power janka companies re job karipaaribe. Ba B.Tech Lateral Entry kari degree paaibaa pachhe even better package miliba. DRIEMS students dono path re safal hoi thanti — aapana choice!",
+      "english_ref": "Both options are available to you! After Diploma, directly work at companies like Hitachi, Exicom, Tata Power. Or do B.Tech Lateral Entry for an even better package after getting degree. DRIEMS students succeed through both paths — your choice!"
+    },
+    {
+      "id": 41,
+      "category": "college_info",
+      "keywords": ["ranking", "rank", "position", "best", "top", "famous", "popular"],
+      "odia_reply": "DRIEMS Polytechnic Odisha ra top private polytechnic colleges bhitare ekta! AICTE approved, SCTE&VT affiliated. Hitachi, Tata Power janka companies ra placement, free transport, swimming pool, gym — eta sab government colleges re milena. Aapana DRIEMS choose karile bhali decision kariba!",
+      "english_ref": "DRIEMS Polytechnic is among the top private polytechnic colleges in Odisha! AICTE approved, SCTE&VT affiliated. Placement from Hitachi, Tata Power, free transport, swimming pool, gym — none of this in government colleges. You will make a great decision by choosing DRIEMS!"
+    },
+    {
+      "id": 42,
+      "category": "college_info",
+      "keywords": ["aicte", "approved", "recognized", "affiliated", "scte", "government recognized", "valid"],
+      "odia_reply": "Haan! DRIEMS Polytechnic AICTE approved aau SCTE&VT Odisha affiliated. Ete ekta fully government recognized institution. Ete diploma/degree saba jagare — government job, B.Tech lateral entry, private job — sab jaagare valid aau accepted!",
+      "english_ref": "Yes! DRIEMS Polytechnic is AICTE approved and SCTE&VT Odisha affiliated. It is a fully government recognized institution. The diploma/degree is valid and accepted everywhere — government job, B.Tech lateral entry, private job — everywhere!"
+    },
+    {
+      "id": 43,
+      "category": "college_info",
+      "keywords": ["branch", "stream", "department", "kana kana", "course available", "which branches"],
+      "odia_reply": "DRIEMS Polytechnic re — Civil Engineering, Mechanical Engineering, Electrical Engineering, aau Electronics & Telecommunication (ETC) — 4 ta branches achi. ETC branch aajira digital age re sabse demanding aau high-placement branch!",
+      "english_ref": "DRIEMS Polytechnic has 4 branches — Civil Engineering, Mechanical Engineering, Electrical Engineering, and Electronics & Telecommunication (ETC). ETC branch is the most in-demand and high-placement branch in today's digital age!"
+    },
+    {
+      "id": 44,
+      "category": "college_info",
+      "keywords": ["etc vs cse", "cse", "computer", "compare", "better", "which is good", "kon bhali"],
+      "odia_reply": "Dono strong branches! Kintu ETC re hardware, telecom, aau embedded systems specialization achi — 5G, IoT, Satellite — sab future ETC ra. Aau DRIEMS re ETC placement — Hitachi, Tata Power, Exicom — bahut strong. ETC eka unique aau high-demand choice!",
+      "english_ref": "Both are strong branches! But ETC has hardware, telecom, and embedded systems specialization — 5G, IoT, Satellite — all future belongs to ETC. And DRIEMS ETC placement — Hitachi, Tata Power, Exicom — is very strong. ETC is a unique and high-demand choice!"
+    },
+    {
+      "id": 45,
+      "category": "contact",
+      "keywords": ["contact", "number", "phone", "call", "reach", "talk", "satya", "sir", "professor"],
+      "odia_reply": "DRIEMS ETC Branch para saadha Satya Ranjan Panigrahi Sir ku call karanti — 7978900914. Sir Assistant Professor, Electronics & Telecommunication Department. Sir ku call karile admission, fees, hostel — sabu prashnar turat aau accurate answer miliba!",
+      "english_ref": "For DRIEMS ETC Branch, directly call Satya Ranjan Panigrahi Sir — 7978900914. Sir is Assistant Professor, Electronics & Telecommunication Department. Calling Sir will give you immediate and accurate answers for admission, fees, hostel — all questions!"
+    },
+    {
+      "id": 46,
+      "category": "contact",
+      "keywords": ["transfer", "connect", "real person", "real teacher", "human", "speak to someone", "anya loka"],
+      "odia_reply": "Bilkul! Mu aapananka call transfer kariba. Ektu hold re thanti. Satya Ranjan Panigrahi Sir — ETC Department — ku directly bhi call karipaarantu: 7978900914. Sir Monday thekaa Saturday, subah 9 thekaa sanjha 5 ta bhitare available thanti.",
+      "english_ref": "Absolutely! I will transfer your call. Please hold for a moment. You can also directly call Satya Ranjan Panigrahi Sir — ETC Department: 7978900914. Sir is available Monday to Saturday, 9 AM to 5 PM."
+    },
+    {
+      "id": 47,
+      "category": "campus",
+      "keywords": ["campus", "100 acres", "green", "nature", "environment", "beautiful", "atmosphere"],
+      "odia_reply": "DRIEMS ra 100+ acres beautiful green campus achi — Odisha ra sabu thekaa sundar polytechnic campuses bhitare ekta! Ete padhile mana fresh thaei aau focus aassei. Swimming pool, gym, huge playground, green nature — ete study environment perfect!",
+      "english_ref": "DRIEMS has a 100+ acres beautiful green campus — among the most beautiful polytechnic campuses in Odisha! Studying here keeps the mind fresh and focused. Swimming pool, gym, huge playground, green nature — the study environment here is perfect!"
+    },
+    {
+      "id": 48,
+      "category": "campus",
+      "keywords": ["safety", "security", "safe", "surakhsha", "girls safe", "night", "24 hour"],
+      "odia_reply": "DRIEMS campus completely safe! 24 ghanta security guards achi, CCTV surveillance achi, aau hostel re warden system achi. Girls ku alag hostel aau separate entry. Parents nischinte thaaibaa paarantu — campus ekdom secure.",
+      "english_ref": "DRIEMS campus is completely safe! 24-hour security guards, CCTV surveillance, and warden system in hostel. Girls have separate hostel and separate entry. Parents can rest assured — campus is absolutely secure."
+    },
+    {
+      "id": 49,
+      "category": "general",
+      "keywords": ["why driems", "kana kaarana", "why choose", "advantage", "benefit", "special", "unique", "different"],
+      "odia_reply": "DRIEMS choose karibara 6 ta bada kaarana: Pahila — Hitachi, Tata Power, Exicom janka top placement. Dwitiya — FREE Bhubaneswar-Cuttack transport. Tritiya — fees matra 65,000 (2 kisti). Chaturtha — swimming pool, gym, 100+ acres campus. Panchama — AICTE approved. Shashtha — Satya Sir janka experienced faculty. Ete sab eka sathe kum jaagaraa milei!",
+      "english_ref": "6 big reasons to choose DRIEMS: First — top placement from Hitachi, Tata Power, Exicom. Second — FREE Bhubaneswar-Cuttack transport. Third — fees just ₹65,000 (2 instalments). Fourth — swimming pool, gym, 100+ acres campus. Fifth — AICTE approved. Sixth — experienced faculty like Satya Sir. Very few places offer all this together!"
+    },
+    {
+      "id": 50,
+      "category": "closing",
+      "keywords": ["ok", "theek", "dhanyabaad", "thanks", "goodbye", "bye", "ok fine", "samajhi gali", "understood"],
+      "odia_reply": "Aapananka call ku bahut dhanyabaad! DRIEMS Polytechnic ETC Branch re aapanaku swagata karibaku aame pratiyaasei thiba. Kono prashna thile — Satya Sir ku call karanti: 7978900914. Aapanara future bright thaau — Shubhakamana!",
+      "english_ref": "Thank you very much for your call! We look forward to welcoming you to DRIEMS Polytechnic ETC Branch. For any questions — call Satya Sir: 7978900914. May your future be bright — Best wishes!"
+    }
+  ]
+}
