@@ -379,7 +379,7 @@ async function sarvamTTS(text, lang, forPhone = true) {
   const langCode   = lang === 'or' ? 'od-IN' : 'en-IN';
   // bulbul:v3 speakers — anushka is the best native Odia female voice
   // For English fallback use 'priya' (warm Indian English female)
-  const speaker    = lang === 'or' ? 'anushka' : 'priya';
+  const speaker    = lang === 'or' ? 'priya' : 'priya';
   const sampleRate = forPhone ? 8000 : 22050;
 
   const r = await fetch('https://api.sarvam.ai/text-to-speech', {
