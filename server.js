@@ -384,27 +384,35 @@ app.post('/api/chat', async (req, res) => {
 
 async function getPriyaResponse(callerSpeech, conversationHistory) {
   
-  // FAST PATH: Try local knowledge base first
+  // FAST PATH (local knowledge)
   const localReply = getOdiaReply(callerSpeech);
   if (localReply && conversationHistory.length <= 2) {
-    // For simple first-time questions, use instant local reply
-    // This cuts latency from ~2000ms to ~50ms
     console.log('[PRIYA] Using local knowledge match - fast path');
     return localReply;
   }
 
-  // FULL PATH: Send to Claude with knowledge context injected
-  console.log('[PRIYA] Sending to Claude with knowledge context');
-  
-  const response = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',   // fast model for low latency
-    max_tokens: 300,                        // keep replies short for phone
-    system: systemPrompt,
-    messages: [
-      ...conversationHistory,
-      { role: 'user', content: callerSpeech }
-    ]
-  });
+  // FULL PATH (Claude API)
+  console.log('[PRIYA] Sending to Claude');
+
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 300,
+      system: systemPrompt,
+      messages: [
+        ...conversationHistory,
+        { role: 'user', content: callerSpeech }
+      ]
+    });
+
+    return response.content[0].text;
+
+  } catch (error) {
+    console.error('Claude error:', error.message);
+    return "Sorry, mu thik bujhi parili nahi. Aau thare kahibe?";
+  }
+}
+
 
   return response.content[0].text;
 }
@@ -418,7 +426,8 @@ function startJob(jobId, speech, callSid, lang) {
     try {
       const state = callStore.get(callSid) || { history: [], lang };
       state.history.push({ role: 'user', content: speech });
-      const reply = await claudeReply(state.history, lang);
+      const reply = await getPriyaResponse(speech, state.history);
+
       state.history.push({ role: 'assistant', content: reply });
       if (state.history.length > 16) state.history = state.history.slice(-16);
       callStore.set(callSid, state);
